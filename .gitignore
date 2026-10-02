@@ -1,0 +1,59 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build / compiled output
+dist/
+build/
+out/
+bin/
+obj/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# JavaScript / TypeScript
+.npm/
+.yarn/
+.pnpm-store/
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE / editor files
+.idea/
+*.iml
+
+# Test / coverage output
+coverage/
+.nyc_output/
+
+# Local configuration
+*.local
