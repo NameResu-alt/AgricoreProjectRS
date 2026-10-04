@@ -18,7 +18,7 @@ export default function FieldJobTab() {
     const functions = createDefaultFunctions("/field_jobs", setData)
 
     const createDialog: DialogDefinition<FieldJobCreate> = {
-        title: "Create Field Job",
+        title: () => "Create Field Job",
         fields: [
             {
                 field: "title",
@@ -48,17 +48,30 @@ export default function FieldJobTab() {
                 type: "number"
             }
         ],
-        submitAction: (value, id) => {
-            functions.post(value)
-            setDialogOpen(false)
+        submitAction: async (value, id) => {
+            await functions.post(value)
         },
         actionName: "Create",
-        onClose: () => setDialogOpen(false),
-        destroyDialog: () => setCurrentDialogDefinition(null)
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+         onErrorOccurred: (err, setErrorMessage)=>{
+            if(err.code == "FOREIGN_KEY_VIOLATION"){
+                if(err.field == "equipment_id"){
+                    setErrorMessage(`There's no matching equipment with provided id`)
+                }
+                else{
+                    setErrorMessage(`There's no matching field hand with provided id`)
+                }
+                
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
     const updateDialog: DialogDefinition<FieldJobUpdate> = {
-        title: "Update Field Job",
+        title: (start) => `Update Field Job ${start?.id}`,
         fields: [
             {
                 field: "title",
@@ -88,13 +101,26 @@ export default function FieldJobTab() {
                 type: "number"
             }
         ],
-        submitAction: (value, id) => {
-            functions.put(value, id!)
-            setDialogOpen(false)
+        submitAction: async (value, id) => {
+            await functions.put(value, id!)
         },
         actionName: "Update",
-        onClose: () => setDialogOpen(false),
-        destroyDialog: () => setCurrentDialogDefinition(null)
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+         onErrorOccurred: (err, setErrorMessage)=>{
+            if(err.code == "FOREIGN_KEY_VIOLATION"){
+                if(err.field == "equipment_id"){
+                    setErrorMessage(`There's no matching equipment with provided id`)
+                }
+                else{
+                    setErrorMessage(`There's no matching field hand with provided id`)
+                }
+                
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
     async function patchFieldJobStatus(value: FieldJobPatchStatus, id: number) {
@@ -103,7 +129,7 @@ export default function FieldJobTab() {
     }
 
     const fieldJobStatusPatchDialog: DialogDefinition<FieldJobPatchStatus> = {
-        title: "Update Field Job Status",
+        title: (start) => `Update Field Job Status ${start?.id}`,
         fields: [
             {
                 field: "status",
@@ -112,18 +138,16 @@ export default function FieldJobTab() {
                 options: Object.values(FieldJobStatus)
             }
         ],
-        submitAction: (value, id) => {
-            patchFieldJobStatus(value, id!)
-            functions.get()
-            setDialogOpen(false)
+        submitAction: async (value, id) => {
+            await patchFieldJobStatus(value, id!)
         },
         actionName: "Update",
-        onClose: () => setDialogOpen(false),
+        onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null)
     }
 
     const fieldJobAttachReportDialog: DialogDefinition<ServiceReportCreate> = {
-        title: "Create Service Report",
+        title: (start) => `Create Service Report For ${start?.value.field_job_id}`,
         fields: [
             {
                 field: "file_url",
@@ -147,13 +171,26 @@ export default function FieldJobTab() {
                 editable: false
             }
         ],
-        submitAction: async (value, id)=>{
+        submitAction: async (value, id) => {
             await apiClient.post("/service_reports", value)
-            setDialogOpen(false)
         },
         actionName: "Create",
-        onClose: ()=>setDialogOpen(false),
-        destroyDialog: ()=>setCurrentDialogDefinition(null)
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+         onErrorOccurred: (err, setErrorMessage)=>{
+            if(err.code == "FOREIGN_KEY_VIOLATION"){
+                if(err.field == "equipment_id"){
+                    setErrorMessage(`There's no matching equipment with provided id`)
+                }
+                else{
+                    setErrorMessage(`There's no matching field hand with provided id`)
+                }
+                
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
     const gridColumnDefinitions: GenericGridColumn<FieldJobRead>[] = [
@@ -187,8 +224,36 @@ export default function FieldJobTab() {
         }
     ]
 
+    const writeReport: GenericGridColumn<FieldJobRead> = {
+        field: "create",
+        headerName: "",
+        type: "actions",
+        width: 150,
+        renderCell: (params) => {
+            return (<Button variant={"outlined"} onClick={
+                () => {
+                    setCurrentDialogDefinition({
+                        ...fieldJobAttachReportDialog,
+                        startingValue: {
+                            value: {
+                                field_job_id: params.row.id
+                            },
+                            id: params.row.id
+                        }
+                    })
+                    setDialogOpen(true)
+                }
+            }
+            
+            sx={{height: "90%", width:"100%"}}
+            >
+                Write Report</Button>)
+        }
+    }
+
     if (user?.role == "Admin") {
         gridColumnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+        gridColumnDefinitions.push(writeReport)
         gridColumnDefinitions.push(GenericDeleteButton(functions.delete))
     }
     else if (user?.role == "Field_Hand") {
@@ -213,30 +278,6 @@ export default function FieldJobTab() {
                         sx={{ height: "100%", width: "100%", backgroundColor: "blue", color: "white" }}
                     >Update Status</Button>
                 )
-            }
-        }
-
-        const writeReport: GenericGridColumn<FieldJobRead> = {
-            field: "create",
-            headerName:"",
-            type:"actions",
-            width: 150,
-            renderCell: (params)=>{
-                return (<Button variant={"outlined"} onClick={
-                    ()=>{
-                        setCurrentDialogDefinition({
-                            ...fieldJobAttachReportDialog,
-                            startingValue:{
-                                value: {
-                                    field_job_id: params.row.id
-                                },
-                                id: params.row.id
-                            }
-                        })
-                        setDialogOpen(true)
-                    }
-                }>
-                Write Report</Button>)
             }
         }
 

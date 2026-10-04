@@ -14,7 +14,7 @@ export default function FieldHandTab() {
     const functions = createDefaultFunctions("/field_hands", setData)
 
     const createDialog: DialogDefinition<FieldHandCreate> = {
-        title: "Create Field Hand",
+        title: () => "Create Field Hand",
         fields: [
             {
                 field: "name",
@@ -27,17 +27,24 @@ export default function FieldHandTab() {
                 type: "number"
             }
         ],
-        submitAction: (value, id) => {
-            functions.post(value)
-            setDialogOpen(false)
+        submitAction: async (value, id) => {
+            await functions.post(value)
         },
         actionName: "Create",
-        onClose: () => setDialogOpen(false),
-        destroyDialog: () => setCurrentDialogDefinition(null)
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+        onErrorOccurred: (error, setErrorMessage)=>{
+            if(error.code == "FOREIGN_KEY_VIOLATION"){
+                setErrorMessage(`There's no matching facility with provided id`)
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
     const updateDialog: DialogDefinition<FieldHandUpdate> = {
-        title: "Create Field Hand",
+        title: (start) => `Update Field Hand ${start?.id}`,
         fields: [
             {
                 field: "name",
@@ -50,13 +57,20 @@ export default function FieldHandTab() {
                 type: "number"
             }
         ],
-        submitAction: (value, id) => {
-            functions.put(value, id!)
-            setDialogOpen(false)
+        submitAction: async (value, id) => {
+            await functions.put(value, id!)
         },
         actionName: "Create",
-        onClose: () => setDialogOpen(false),
-        destroyDialog: () => setCurrentDialogDefinition(null)
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+        onErrorOccurred: (error, setErrorMessage)=>{
+            if(error.code == "FOREIGN_KEY_VIOLATION"){
+                setErrorMessage(`There's no matching facility with provided id`)
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
     const gridColumnDefinition: GenericGridColumn<FieldHandRead>[] = [

@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import type { FarmCreate, FarmRead, FarmUpdate } from "../api/schemas/farm";
 import type { GenericGridColumn } from "./GenericDataGridComponent"
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
-import { Button } from "@mui/material";
+import { Button, Snackbar } from "@mui/material";
 import {type DialogDefinition} from "./DialogComponent"
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 
@@ -13,11 +13,12 @@ export default function FarmTab() {
     const [data, setData] = useState<FarmRead[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
+    
 
     const functions = createDefaultFunctions("/farms", setData)
 
     const updateDialog: DialogDefinition<FarmUpdate> = {
-        title: "Update Farm",
+        title: (start) => `Update Farm ${start?.id}`,
         fields: [
             {
                 field: "name",
@@ -40,17 +41,16 @@ export default function FarmTab() {
                 type:"number"
             }
         ],
-        submitAction: (value: FarmUpdate, id?: number) => {
-            functions.put(value, id!)
-            setDialogOpen(false)
+        submitAction: async (value: FarmUpdate, id?: number) => {
+            await functions.put(value, id!)
         },
         actionName:"Update",
-        onClose: ()=>{setDialogOpen(false)},
+        onDialogClose: ()=>{setDialogOpen(false)},
         destroyDialog: ()=>{setCurrentDialogDefinition(null)}
     }
 
     const createDialog: DialogDefinition<FarmCreate> = {
-        title: "Create Farm",
+        title: ()=> "Create Farm",
         fields: [
             {
                 field: "name",
@@ -74,14 +74,13 @@ export default function FarmTab() {
             }
 
         ],
-        submitAction: (value: FarmCreate, id?: number)=>{
+        submitAction: async (value: FarmCreate, id?: number)=>{
             //alert(`I would have submitted this!: ${JSON.stringify(value)}`)
-            functions.post(value)
-            setDialogOpen(false)
+            await functions.post(value)
             //functions.post(value)
         },
         actionName:"Create",
-        onClose: ()=>{setDialogOpen(false)},
+        onDialogClose: ()=>{setDialogOpen(false)},
         destroyDialog: ()=>{setCurrentDialogDefinition(null)}
     }
 
@@ -132,6 +131,9 @@ export default function FarmTab() {
                 dialogOpen={dialogOpen}
                 setDialogOpen={setDialogOpen}
             />
+            <Snackbar>
+                
+            </Snackbar>
         </>
     )
 

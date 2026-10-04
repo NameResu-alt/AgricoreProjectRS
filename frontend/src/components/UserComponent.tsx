@@ -28,7 +28,7 @@ export default function UserTab() {
     }
 
     const createDialog: DialogDefinition<UserCreate> = {
-        title: "Create User",
+        title: ()=>"Create User",
         fields: [
             {
                 field: "username",
@@ -47,12 +47,11 @@ export default function UserTab() {
                 options: Object.values(UserRole)
             }
         ],
-        submitAction: (value, id) => {
-            createUser(value)
-            setDialogOpen(false)
+        submitAction: async (value, id) => {
+            await createUser(value)
         },
         actionName: "Create",
-        onClose: () => setDialogOpen(false),
+        onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null)
     }
 

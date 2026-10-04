@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Grid, Paper, TextField, Typography } from "@mui/material"
 import { DataGrid, type GridColDef } from "@mui/x-data-grid"
 import type { EquipmentMetric } from "../api/schemas/equipment"
+import CircularProgressWithLabel from "./CircularProgressWithLabel";
 
 function LowFuelAlertGrid({gridSize}: {gridSize: number}){
     //Which active equipment units are operating below a 20% fuel level across all farms?
@@ -33,7 +34,12 @@ function LowFuelAlertGrid({gridSize}: {gridSize: number}){
             field:"fuel_level",
             headerName:"Fuel Level",
             type:"number",
-            flex:1
+            flex:1,
+            renderCell: (params)=>{
+                return (
+                    <CircularProgressWithLabel value={params.row.fuel_level}></CircularProgressWithLabel>
+                )
+            }
         },
         {
             field:"facility_id",

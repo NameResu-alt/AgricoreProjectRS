@@ -4,21 +4,27 @@ import type React from "react";
 import { GenericDialog, type DialogDefinition } from "./DialogComponent";
 import { Box, Button } from "@mui/material";
 import type { UserRole } from "../api/schemas/auth";
+import type { GridApiCommunity } from "@mui/x-data-grid/internals";
+import DeleteIcon from '@mui/icons-material/Delete';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 export type GenericGridColumn<T extends GridValidRowModel> = {
     field: keyof T | "delete" | "update" | "patch" | "create";
     headerName: string;
-    type?: "string" | "number" | "actions";
+    type?: "string" | "number" | "actions" | "dateTime";
     width?: number;
-    renderCell?: (params: GridRenderCellParams<T, any, any, GridTreeNodeWithRender>) => React.JSX.Element
+    renderCell?: (params: GridRenderCellParams<T, any, any, GridTreeNodeWithRender>) => React.JSX.Element;
+    valueGetter?: (value: any,row: T, column: GridColDef,apiRef: React.RefObject<GridApiCommunity>) => any
+
 };
 
 export function GenericUpdateButton<T>(updateDialog: DialogDefinition<T>, setCurrentDialogDefinition: (value: React.SetStateAction<DialogDefinition<T> | null>) => void, setDialogOpen: (value: React.SetStateAction<boolean>) => void): GenericGridColumn<any> {
+    
     return {
         field: "update",
         headerName: "",
         type: "actions",
-        width: 100,
+        width: 75,
         renderCell: (params) => {
             return (
                 <Button onClick={() => {
@@ -32,36 +38,46 @@ export function GenericUpdateButton<T>(updateDialog: DialogDefinition<T>, setCur
                     setDialogOpen(true)
                 }
                 }
-                    sx={{ height: "100%", width: "100%", backgroundColor: "blue", color: "white" }}>Update</Button>
+                    sx={{ height: "75%", width: "50%", backgroundColor: "blue", color: "white" }}>
+                        <SettingsIcon></SettingsIcon>
+                    </Button>
             )
             //<button onClick={()=>actions.onDelete(Number(params.id))}>Test</button>
         },
     }
 }
 
-export function GenericDeleteButton(deleteFunction: (id: number) => void): GenericGridColumn<any> {
+export function GenericDeleteButton(deleteFunction: (id: number) => Promise<void>): GenericGridColumn<any> {
     return {
         field: "delete",
         headerName: "",
         type: "actions",
-        width: 100,
-        renderCell: (params) => {
+        width: 75,
+        renderCell:  (params) => {
             return (
                 <Button
-                    onClick={() => {
-                        deleteFunction(params.row.id)
+                    onClick={async () => {
+                        try{
+                            await deleteFunction(params.row.id)
+                        }
+                        catch{
+                            alert("Unable to delete!")
+                        }
+                        
                     }}
-                    sx={{ height: "100%", width: "100%", backgroundColor: "red", color: "white" }}
-                >Delete</Button>
+                    sx={{ height: "75%", width: "50%", backgroundColor: "red", color: "white" }}
+                >
+                    <DeleteIcon></DeleteIcon>
+                </Button>
             )
         }
     }
 }
 
-export function GenericTabBody<T extends GridValidRowModel>({userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen}: {userRole:UserRole|undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[],  createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>}){
+export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen}: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
     return (
         <>
-            <Box sx={{ paddingTop: 2, height: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
+            <Box sx={{ paddingTop: 2, height: "100%", width:"100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column"}}>
                 {
                     userRole === "Admin" &&
                     <Button
@@ -77,12 +93,13 @@ export function GenericTabBody<T extends GridValidRowModel>({userRole, data, gri
                 }
 
                 <GenericDataGridV3 rowData={data} columns={gridColumnDefinition} />
+                {
+                    currentDialogDefinition &&
+                    <GenericDialog definition={currentDialogDefinition} dialogOpen={dialogOpen}/>
+                }
             </Box>
-            {
-                currentDialogDefinition && 
-                <GenericDialog definition = {currentDialogDefinition} dialogOpen={dialogOpen}/>
-            }
-            
+
+
         </>
     )
 }
@@ -98,7 +115,8 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
             ? { width: col.width }
             : { flex: 1 }
         ),
-        renderCell: col.renderCell
+        renderCell: col.renderCell,
+        valueGetter: col.valueGetter
     }))
 
     return (

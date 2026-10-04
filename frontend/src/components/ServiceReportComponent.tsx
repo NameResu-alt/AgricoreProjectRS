@@ -4,6 +4,7 @@ import type { ServiceReportCreate, ServiceReportRead } from "../api/schemas/serv
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn } from "./GenericDataGridComponent";
+import { ApiRounded } from "@mui/icons-material";
 
 export default function ServiceReportTab(){
     const {user} = useAuth()
@@ -14,7 +15,7 @@ export default function ServiceReportTab(){
     const functions = createDefaultFunctions("/service_reports", setData)
 
     const createDialog: DialogDefinition<ServiceReportCreate> = {
-        title: "Create Service Report",
+        title: () => "Create Service Report",
         fields: [
             {
                 field: "file_url",
@@ -37,18 +38,25 @@ export default function ServiceReportTab(){
                 type: "number"
             }
         ],
-        submitAction: (value, id)=>{
-            functions.post(value)
-            setDialogOpen(false)
+        submitAction: async (value, id)=>{
+            await functions.post(value)
         },
         actionName: "Create",
-        onClose: ()=>setDialogOpen(false),
-        destroyDialog: ()=>setCurrentDialogDefinition(null)
+        onDialogClose: ()=>setDialogOpen(false),
+        destroyDialog: ()=>setCurrentDialogDefinition(null),
+        onErrorOccurred: (err, setErrorMessage)=>{
+            if(err.code == "FOREIGN_KEY_VIOLATION"){
+                setErrorMessage(`There's no matching field job with provided id`)
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
 
     const updateDialog: DialogDefinition<ServiceReportCreate> = {
-        title: "Update Service Report",
+        title: (start) => `Update Service Report ${start?.id}`,
         fields: [
             {
                 field: "file_url",
@@ -71,13 +79,20 @@ export default function ServiceReportTab(){
                 type: "number"
             }
         ],
-        submitAction: (value, id)=>{
-            functions.put(value,id!)
-            setDialogOpen(false)
+        submitAction: async (value, id)=>{
+            await functions.put(value,id!)
         },
         actionName: "Update",
-        onClose: ()=>setDialogOpen(false),
-        destroyDialog: ()=>setCurrentDialogDefinition(null)
+        onDialogClose: ()=>setDialogOpen(false),
+        destroyDialog: ()=>setCurrentDialogDefinition(null),
+        onErrorOccurred: (err, setErrorMessage)=>{
+            if(err.code == "FOREIGN_KEY_VIOLATION"){
+                setErrorMessage(`There's no matching field job with provided id`)
+            }
+            else{
+                setErrorMessage("An error occurred")
+            }
+        }
     }
 
     const columnDefinitions: GenericGridColumn<ServiceReportRead>[] = [
@@ -97,7 +112,11 @@ export default function ServiceReportTab(){
         },
         {
             field:"timestamp",
-            headerName:"Timestamp"
+            headerName:"Timestamp",
+            type: "dateTime",
+            valueGetter: (value, row, column, apiRef)=>{
+                return new Date(value)
+            }
         },
         {
             field: "field_job_id",

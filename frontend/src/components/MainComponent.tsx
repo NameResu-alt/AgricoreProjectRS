@@ -95,7 +95,7 @@ export default function MainPage() {
 
     return (
         <Box component={"main"} sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-            <Box sx={{ height: tabBarheight, width: "100%", display: "flex", flexDirection: "row", position: "fixed", backgroundColor: "white", zIndex: 1000, justifyContent: "space-between" }}>
+            <Box sx={{ height: tabBarheight, width: "100%", display: "flex", flexDirection: "row", position: "fixed", backgroundColor: "white", zIndex: 1000, justifyContent: "space-between", boxShadow: 3,}}>
                 <Box sx={{ width: "100px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
                     <img src={Logo} alt="Company Logo" width="150" height="50" />
                     AgriCore

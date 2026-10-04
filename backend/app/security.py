@@ -20,7 +20,7 @@ def create_access_token(data: dict[str,str], expire_time: timedelta = None) -> s
     expire = datetime.now(timezone.utc) + (expire_time or timedelta(minutes=DEFAULT_EXPIRE_TIME_MINUTES))
 
     copied_data["exp"] = expire
-    return jwt.encode(payload=data, key=SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(payload=copied_data, key=SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_access_token(token: str) -> dict[str, Any]:
     return jwt.decode(jwt=token, key=SECRET_KEY, algorithms=[ALGORITHM])

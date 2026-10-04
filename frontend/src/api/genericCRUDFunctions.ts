@@ -3,10 +3,10 @@ import apiClient from "./client";
 import type React from "react";
 
 interface Functions {
-    get: () => void
-    post: (data: any) => void
-    put: (data: any, id: number) => void
-    delete: (id: number) => void
+    get: () => Promise<void>
+    post: (data: any) => Promise<void>
+    put: (data: any, id: number) => Promise<void>
+    delete: (id: number) => Promise<void>
 }
 
 //const setData: React.Dispatch<React.SetStateAction<FarmRead[]>>
