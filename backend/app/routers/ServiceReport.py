@@ -29,7 +29,7 @@ async def delete_service_report(service_report_id: int,
 @router.post("", response_model=ServiceReportRead)
 async def create_service_report(payload: ServiceReportCreate,
                                 db_session: AsyncSession = Depends(get_db),
-                                _:User = Depends(require_role(UserRole.ADMIN))):
+                                _:User = Depends(require_role(UserRole.ADMIN, UserRole.FIELD_HAND))):
     new_service_report = ServiceReport(**payload.model_dump())
 
     db_session.add(new_service_report)

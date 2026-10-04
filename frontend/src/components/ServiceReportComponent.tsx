@@ -1,57 +1,133 @@
-import { UserRole } from "../api/schemas/auth";
-import type { ServiceReportCreate, ServiceReportRead, ServiceReportUpdate } from "../api/schemas/service_report";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import GenericDataGridComponent, { DefaultDeleteButton, DefaultUpdateButton, type GenericGridColumn, type GridActions } from "./GenericDataGridComponent";
+import type { ServiceReportCreate, ServiceReportRead } from "../api/schemas/service_report";
+import type { DialogDefinition } from "./DialogComponent";
+import createDefaultFunctions from "../api/genericCRUDFunctions";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn } from "./GenericDataGridComponent";
 
 export default function ServiceReportTab(){
     const {user} = useAuth()
+    const [data, setData] = useState<ServiceReportRead[]>([])
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
 
-    function definition(actions: GridActions<ServiceReportRead>){
-        const columns: GenericGridColumn<ServiceReportRead>[] = [
+    const functions = createDefaultFunctions("/service_reports", setData)
+
+    const createDialog: DialogDefinition<ServiceReportCreate> = {
+        title: "Create Service Report",
+        fields: [
             {
-                field:"id",
-                headerName:"ID",
-                type:"number",
-                width:30
+                field: "file_url",
+                headerName: "File URL",
+                type: "text"
             },
             {
-                field:"file_url",
-                headerName:"File URL",
+                field: "notes",
+                headerName: "Notes",
+                type: "text"
             },
             {
-                field:"notes",
-                headerName:"Notes"
+                field: "timestamp",
+                headerName: "Timestamp",
+                type: "text"
             },
             {
-                field:"timestamp",
-                headerName:"Timestamp"
-            },
-            {
-                field:"field_job_id",
-                headerName:"Field Job ID",
-                type:"number"
+                field: "field_job_id",
+                headerName: "Field Job ID",
+                type: "number"
             }
-        ]
+        ],
+        submitAction: (value, id)=>{
+            functions.post(value)
+            setDialogOpen(false)
+        },
+        actionName: "Create",
+        onClose: ()=>setDialogOpen(false),
+        destroyDialog: ()=>setCurrentDialogDefinition(null)
+    }
 
-        if(user?.role == UserRole.ADMIN){
-            columns.push(DefaultDeleteButton(actions))
-            columns.push(DefaultUpdateButton(actions, "Update Service Report"))
+
+    const updateDialog: DialogDefinition<ServiceReportCreate> = {
+        title: "Update Service Report",
+        fields: [
+            {
+                field: "file_url",
+                headerName: "File URL",
+                type: "text"
+            },
+            {
+                field: "notes",
+                headerName: "Notes",
+                type: "text"
+            },
+            {
+                field: "timestamp",
+                headerName: "Timestamp",
+                type: "text"
+            },
+            {
+                field: "field_job_id",
+                headerName: "Field Job ID",
+                type: "number"
+            }
+        ],
+        submitAction: (value, id)=>{
+            functions.put(value,id!)
+            setDialogOpen(false)
+        },
+        actionName: "Update",
+        onClose: ()=>setDialogOpen(false),
+        destroyDialog: ()=>setCurrentDialogDefinition(null)
+    }
+
+    const columnDefinitions: GenericGridColumn<ServiceReportRead>[] = [
+        {
+            field: "id",
+            headerName: "ID",
+            type:"number",
+            width: 30
+        },
+        {
+            field: "file_url",
+            headerName: "File URL",
+        },
+        {
+            field: "notes",
+            headerName:"Notes"
+        },
+        {
+            field:"timestamp",
+            headerName:"Timestamp"
+        },
+        {
+            field: "field_job_id",
+            headerName:"Field Job ID",
+            type:"number"
         }
+    ]
 
-
-        return columns
+    if(user?.role == "Admin")
+    {
+        columnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+        columnDefinitions.push(GenericDeleteButton(functions.delete))
     }
 
-    const emptyModel : ServiceReportRead = {
-        id: 0,
-        file_url: "",
-        notes: "",
-        timestamp:"",
-        field_job_id: 0
+    useEffect(()=>{
+        functions.get()
     }
+    ,[])
+
 
     return (
-        <GenericDataGridComponent<ServiceReportRead, ServiceReportCreate, ServiceReportUpdate> urlBase="/service_reports" emptyModel={emptyModel} columnDefinitions={definition} />
+        <GenericTabBody 
+            userRole = {user?.role}
+            data = {data}
+            gridColumnDefinition = {columnDefinitions}
+            createDialog = {createDialog}
+            currentDialogDefinition = {currentDialogDefinition}
+            setCurrentDialogDefinition = {setCurrentDialogDefinition}
+            dialogOpen = {dialogOpen}
+            setDialogOpen = {setDialogOpen}
+        />
     )
-
 }

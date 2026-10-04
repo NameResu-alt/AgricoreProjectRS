@@ -1,48 +1,105 @@
-import { Button } from "@mui/material";
-import { UserRole, type UserCreate, type UserRead, type UserUpdate } from "../api/schemas/auth";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import GenericDataGridComponent, { DefaultDeleteButton, type GenericGridColumn, type GridActions } from "./GenericDataGridComponent";
+import { UserRole, type UserCreate, type UserRead } from "../api/schemas/auth";
+import type { DialogDefinition } from "./DialogComponent";
+import apiClient from "../api/client";
+import { GenericDeleteButton, GenericTabBody, type GenericGridColumn } from "./GenericDataGridComponent";
 
 export default function UserTab() {
     const { user } = useAuth()
+    const [data, setData] = useState<UserRead[]>([])
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
 
-    function definition(actions: GridActions<UserRead>) {
-        const columns: GenericGridColumn<UserRead>[] = [
+
+    async function getUsers() {
+        const response = await apiClient.get<UserRead[]>("/auth")
+        setData(response.data)
+    }
+
+    async function createUser(value: UserCreate) {
+        await apiClient.post<UserRead>("/auth/register", value)
+        getUsers()
+    }
+
+    async function deleteUser(id: number) {
+        await apiClient.delete(`/auth/${id}`)
+        getUsers()
+    }
+
+    const createDialog: DialogDefinition<UserCreate> = {
+        title: "Create User",
+        fields: [
             {
-                field: "id",
-                headerName: "ID",
-                type: "number",
-                width: 30
+                field: "username",
+                headerName: "Username",
+                type: "text"
+            },
+            {
+                field: "password",
+                headerName: "Password",
+                type: "password"
             },
             {
                 field: "role",
-                headerName: "Role"
-            },
-            {
-                field: "is_active",
-                headerName: "Active",
-                width: 100
-            },
-            {
-                field: "created_date",
-                headerName: "Created Date"
-            },
-            DefaultDeleteButton(actions)
-        ]
-
-        return columns;
+                headerName: "Role",
+                type: "text",
+                options: Object.values(UserRole)
+            }
+        ],
+        submitAction: (value, id) => {
+            createUser(value)
+            setDialogOpen(false)
+        },
+        actionName: "Create",
+        onClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null)
     }
 
-    const emptyModel: UserRead = {
-        id: 0,
-        username: "",
-        is_active: false,
-        created_date: "",
-        role: UserRole.AUDITOR
-    }
+    const columnDefinitions: GenericGridColumn<UserRead>[] = [
+        {
+            field: "id",
+            headerName: "ID",
+            type: "number",
+            width: 30
+        },
+        {
+            field: "username",
+            headerName: "Username"
+        },
+        {
+            field: "role",
+            headerName: "Role"
+        },
+        {
+            field: "is_active",
+            headerName: "Active"
+        },
+        {
+            field: "created_date",
+            headerName: "Created Date"
+        },
+        GenericDeleteButton(deleteUser)
+    ]
+
+    useEffect(() => {
+        getUsers()
+    }, [])
+
 
     return (
-        <GenericDataGridComponent<UserRead, UserCreate, UserUpdate> urlBase="/auth" postUrl="/auth/register" columnDefinitions={definition} emptyModel={emptyModel} />
+        <>
+            <GenericTabBody
+                userRole={user?.role}
+                data={data}
+                createDialog={createDialog}
+                gridColumnDefinition={columnDefinitions}
+                dialogOpen={dialogOpen}
+                setDialogOpen={setDialogOpen}
+                currentDialogDefinition={currentDialogDefinition}
+                setCurrentDialogDefinition={setCurrentDialogDefinition}
+            />
+        </>
     )
 
 }

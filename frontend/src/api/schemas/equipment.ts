@@ -32,4 +32,6 @@ interface EquipmentMetric{
 
 type EquipmentStatus = typeof EquipmentStatus[keyof typeof EquipmentStatus];
 
-export type {EquipmentStatus, EquipmentRead, EquipmentCreate, EquipmentMetric, EquipmentUpdate}
+export {EquipmentStatus}
+
+export type {EquipmentRead, EquipmentCreate, EquipmentMetric, EquipmentUpdate}

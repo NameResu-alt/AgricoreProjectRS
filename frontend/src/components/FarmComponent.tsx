@@ -1,71 +1,138 @@
-import type { FarmRead, FarmCreate, FarmUpdate } from "../api/schemas/farm";
-import type { GenericGridColumn, GridActions } from "./GenericDataGridComponent";
-import {DefaultDeleteButton, DefaultUpdateButton} from "./GenericDataGridComponent";
-import GenericDataGridComponent
- from "./GenericDataGridComponent";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import type { FarmCreate, FarmRead, FarmUpdate } from "../api/schemas/farm";
+import type { GenericGridColumn } from "./GenericDataGridComponent"
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
+import { Button } from "@mui/material";
+import {type DialogDefinition} from "./DialogComponent"
+import createDefaultFunctions from "../api/genericCRUDFunctions";
 
-import { useAuth } from '../context/AuthContext';
-export default function FarmTab(){
-    const {user} = useAuth()
+export default function FarmTab() {
+    const { user } = useAuth()
 
-    function definition(actions: GridActions<FarmRead>){
-        const columns: GenericGridColumn<FarmRead>[] = [
+    const [data, setData] = useState<FarmRead[]>([])
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
+
+    const functions = createDefaultFunctions("/farms", setData)
+
+    const updateDialog: DialogDefinition<FarmUpdate> = {
+        title: "Update Farm",
+        fields: [
             {
-                field: "id",
-                headerName: "ID",
-                type:"number",
-                width:30
+                field: "name",
+                headerName: "Name",
+                type: "text"
             },
             {
-                field:"name",
-                headerName:"Name"
+                field: "location_region",
+                headerName: "Location Region",
+                type: "text"
             },
             {
-                field:"location_region",
-                headerName:"Location Region"
-            },{
-                field:"capacity",
-                headerName:"Capacity",
+                field: "capacity",
+                headerName: "Capacity",
                 type:"number"
             },
             {
-                field:"supervisor_id",
-                headerName:"Supervisor Id"
+                field: "supervisor_id",
+                headerName: "Supervisor ID",
+                type:"number"
             }
-        ]
+        ],
+        submitAction: (value: FarmUpdate, id?: number) => {
+            functions.put(value, id!)
+            setDialogOpen(false)
+        },
+        actionName:"Update",
+        onClose: ()=>{setDialogOpen(false)},
+        destroyDialog: ()=>{setCurrentDialogDefinition(null)}
+    }
 
-        if(user.role == "Admin"){
-            columns.push(DefaultDeleteButton(actions))
-            columns.push(DefaultUpdateButton(actions, "Update Farm"))
+    const createDialog: DialogDefinition<FarmCreate> = {
+        title: "Create Farm",
+        fields: [
+            {
+                field: "name",
+                headerName: "Name",
+                type: "text"
+            },
+            {
+                field: "location_region",
+                headerName: "Location Region",
+                type: "text"
+            },
+            {
+                field: "capacity",
+                headerName: "Capacity",
+                type:"number"
+            },
+            {
+                field: "supervisor_id",
+                headerName: "Supervisor ID",
+                type:"number"
+            }
+
+        ],
+        submitAction: (value: FarmCreate, id?: number)=>{
+            //alert(`I would have submitted this!: ${JSON.stringify(value)}`)
+            functions.post(value)
+            setDialogOpen(false)
+            //functions.post(value)
+        },
+        actionName:"Create",
+        onClose: ()=>{setDialogOpen(false)},
+        destroyDialog: ()=>{setCurrentDialogDefinition(null)}
+    }
+
+    const dataGridColumnDefinition: GenericGridColumn<FarmRead>[] = [
+        {
+            field: "id",
+            headerName: "ID",
+            width: 30
+        },
+        {
+            field: "name",
+            headerName: "Name"
+        },
+        {
+            field: "location_region",
+            headerName: "Location Region"
+        },
+        {
+            field: "capacity",
+            type: "number",
+            headerName: "Capacity"
+        },
+        {
+            field: "supervisor_id",
+            type: "number",
+            headerName: "Supervisor Id"
         }
+    ]
 
-        return columns
+    if(user?.role == "Admin")
+    {
+        dataGridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+        dataGridColumnDefinition.push(GenericDeleteButton(functions.delete))
     }
 
-    
-
-    /**
-     * interface FarmBase{
-    name: string
-    location_region: string
-    capacity: number
-    supervisor_id: number   
-}
-
-interface FarmRead extends FarmBase{
-    id: number
-}
-     */
-
-    const emptyModel: FarmRead = {
-        id: 0,
-        name: "",
-        location_region:"",
-        capacity: 0,
-        supervisor_id: 0
-    }
+    useEffect(()=>{
+        functions.get()
+    },[])
 
     return (
-        <GenericDataGridComponent<FarmRead, FarmCreate, FarmUpdate> urlBase={"/farms"} columnDefinitions={definition} emptyModel={emptyModel}/>
-    );
+        <>
+            <GenericTabBody<FarmRead>
+                userRole={user?.role} data={data}
+                gridColumnDefinition={dataGridColumnDefinition}
+                createDialog={createDialog}
+                currentDialogDefinition={currentDialogDefinition}
+                setCurrentDialogDefinition={setCurrentDialogDefinition}
+                dialogOpen={dialogOpen}
+                setDialogOpen={setDialogOpen}
+            />
+        </>
+    )
+
 }

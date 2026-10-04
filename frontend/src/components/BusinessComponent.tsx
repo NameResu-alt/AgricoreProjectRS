@@ -1,7 +1,7 @@
 import type { LowFuelAlert, ColocationDiscrepancies, ReliabilityMetrics, MaintenanceFlags, ReportingLines } from "../api/schemas/business"
 import apiClient from "../api/client"
 import { useEffect, useState } from "react"
-import { Card, Grid, Paper, TextField, Typography } from "@mui/material"
+import { Grid, Paper, TextField, Typography } from "@mui/material"
 import { DataGrid, type GridColDef } from "@mui/x-data-grid"
 import type { EquipmentMetric } from "../api/schemas/equipment"
 

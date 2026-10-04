@@ -19,6 +19,7 @@ import Logo from "../assets/farm-svgrepo-com.svg"
 import { UserRole } from "../api/schemas/auth";
 
 
+
 export default function MainPage() {
 
     const { user, logout } = useAuth()
@@ -42,7 +43,7 @@ export default function MainPage() {
         key: "farms",
         label: "Farms",
         icon: <AgricultureIcon />,
-        content: <FarmTab />
+        content: <FarmTab/>//<FarmTab />
     }
 
     const equipmentTab = {

@@ -1,79 +1,150 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { EquipmentStatus, type EquipmentCreate, type EquipmentRead, type EquipmentUpdate } from "../api/schemas/equipment";
+import { type DialogDefinition } from "./DialogComponent";
+import createDefaultFunctions from "../api/genericCRUDFunctions";
+import type { GenericGridColumn } from "./GenericDataGridComponent";
 import { Button } from "@mui/material";
-import type { EquipmentRead, EquipmentCreate, EquipmentUpdate } from "../api/schemas/equipment";
-import GenericDataGridComponent from "./GenericDataGridComponent";
-import type { GenericGridColumn, GridActions } from "./GenericDataGridComponent";
-import {DefaultUpdateButton, DefaultDeleteButton} from "./GenericDataGridComponent"
-import { useAuth } from '../context/AuthContext';
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
 
-export default function EquipmentTab() {
+export default function EquipmentTab(){
     const {user} = useAuth()
+    const [data, setData] = useState<EquipmentRead[]>([])
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
 
-    function definition(actions: GridActions<EquipmentRead>) {
-        const columns: GenericGridColumn<EquipmentRead>[] = [
-            {
-                field: "id",
-                headerName: "ID",
-                type: "number",
-                width: 30
-            },
+    const functions = createDefaultFunctions("/equipment", setData)
+
+    const createDialog: DialogDefinition<EquipmentCreate> = {
+        title: "Create Equipment",
+        fields: [
             {
                 field: "serial_number",
-                headerName: "Serial Number"
+                headerName: "Serial Number",
+                type:"text"
             },
             {
                 field: "model",
-                headerName: "Model"
+                headerName: "Model",
+                type:"text"
             },
             {
                 field: "status",
-                headerName: "Status"
+                headerName: "Status",
+                type: "text",
+                options: Object.values(EquipmentStatus)
             },
             {
                 field: "fuel_level",
                 headerName: "Fuel Level",
-                type: "number"
+                type:"number"
             },
             {
                 field: "facility_id",
                 headerName: "Facility ID",
-                type: "number"
+                type:"number"
             }
-        ]
-
-        if(user?.role == "Admin"){
-            columns.push(DefaultDeleteButton(actions))
-            columns.push(DefaultUpdateButton(actions, "Update Farm"))
-        }
-
-        return columns
+        ],
+        submitAction: (value, id) => {
+            functions.post(value)
+            setDialogOpen(false)
+        },
+        actionName: "Create",
+        onClose: ()=>setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null)
     }
 
-    /**
-     * interface EquipmentBase{
-    serial_number: string
-    model: string
-    status: string
-    fuel_level: number
-    facility_id: number
-}
-
-interface EquipmentRead extends EquipmentBase{
-    id: number
-}
-
-     */
-
-    const emptyModel: EquipmentRead = {
-        id: 0,
-        serial_number: "",
-        model: "",
-        status: "Idle",
-        fuel_level: 0,
-        facility_id: 0
+    const updateDialog: DialogDefinition<EquipmentUpdate> = {
+        title: "Update Equipment",
+        fields: [
+            {
+                field: "serial_number",
+                headerName: "Serial Number",
+                type:"text"
+            },
+            {
+                field: "model",
+                headerName: "Model",
+                type:"text"
+            },
+            {
+                field: "status",
+                headerName: "Status",
+                type: "text",
+                options: Object.values(EquipmentStatus)
+            },
+            {
+                field: "fuel_level",
+                headerName: "Fuel Level",
+                type:"number"
+            },
+            {
+                field: "facility_id",
+                headerName: "Facility ID",
+                type:"number"
+            }
+        ],
+        submitAction: (value, id) => {
+            functions.put(value,id!)
+            setDialogOpen(false)
+        },
+        actionName: "Update",
+        onClose: ()=>setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null)
     }
 
+
+    const gridColumnDefinition: GenericGridColumn<EquipmentRead>[] = [
+        {
+            field:"id",
+            headerName:"ID",
+            width:30
+        },
+        {
+            field:"serial_number",
+            headerName: "Serial Number"
+        },
+        {
+            field:"model",
+            headerName:"Model",
+        },
+        {
+            field:"status",
+            headerName:"Status"
+        },
+        {
+            field:"fuel_level",
+            headerName:"Fuel Level"
+        },
+        {
+            field: "facility_id",
+            headerName:"Facility ID",
+            type:"number"
+        },
+    ]
+
+    if(user?.role == "Admin")
+    {
+        gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+        gridColumnDefinition.push(GenericDeleteButton(functions.delete))
+    }
+
+    useEffect(()=>{
+        functions.get()
+    },[])
 
     return (
-        <GenericDataGridComponent<EquipmentRead, EquipmentCreate, EquipmentUpdate> urlBase={"/equipment"} columnDefinitions={definition} emptyModel={emptyModel} />
+        <>
+            <GenericTabBody<EquipmentRead>
+                userRole={user?.role} data={data}
+                gridColumnDefinition={gridColumnDefinition}
+                createDialog={createDialog}
+                currentDialogDefinition={currentDialogDefinition}
+                setCurrentDialogDefinition={setCurrentDialogDefinition}
+                dialogOpen={dialogOpen}
+                setDialogOpen={setDialogOpen}
+            />
+        </>
     )
+
 }

@@ -31,8 +31,12 @@ interface FieldJobUpdate extends FieldJobBase{
 
 }
 
+interface FieldJobPatchStatus {
+    status: FieldJobStatus
+}
+
 type FieldJobPriority = typeof FieldJobPriority[keyof typeof FieldJobPriority]
 type FieldJobStatus = typeof FieldJobStatus[keyof typeof FieldJobStatus]
 
-export type {FieldJobRead, FieldJobCreate, FieldJobUpdate}
+export type {FieldJobRead, FieldJobCreate, FieldJobUpdate, FieldJobPatchStatus}
 export {FieldJobPriority, FieldJobStatus}
