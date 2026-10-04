@@ -3,14 +3,14 @@ import { useAuth } from "../context/AuthContext";
 import { type DialogDefinition } from "./DialogComponent";
 import type { FieldHandCreate, FieldHandRead, FieldHandUpdate } from "../api/schemas/field_hand";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn } from "./GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
 
 export default function FieldHandTab() {
     const { user } = useAuth()
     const [data, setData] = useState<FieldHandRead[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
-
+    const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
     const functions = createDefaultFunctions("/field_hands", setData)
 
     const createDialog: DialogDefinition<FieldHandCreate> = {
@@ -29,15 +29,23 @@ export default function FieldHandTab() {
         ],
         submitAction: async (value, id) => {
             await functions.post(value)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully created Field Hand`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName: "Create",
         onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null),
-        onErrorOccurred: (error, setErrorMessage)=>{
-            if(error.code == "FOREIGN_KEY_VIOLATION"){
+        onErrorOccurred: (error, setErrorMessage) => {
+            if (error.code == "FOREIGN_KEY_VIOLATION") {
                 setErrorMessage(`There's no matching facility with provided id`)
             }
-            else{
+            else {
                 setErrorMessage("An error occurred")
             }
         }
@@ -59,15 +67,23 @@ export default function FieldHandTab() {
         ],
         submitAction: async (value, id) => {
             await functions.put(value, id!)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully updated Field Hand ${id}`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName: "Create",
         onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null),
-        onErrorOccurred: (error, setErrorMessage)=>{
-            if(error.code == "FOREIGN_KEY_VIOLATION"){
+        onErrorOccurred: (error, setErrorMessage) => {
+            if (error.code == "FOREIGN_KEY_VIOLATION") {
                 setErrorMessage(`There's no matching facility with provided id`)
             }
-            else{
+            else {
                 setErrorMessage("An error occurred")
             }
         }
@@ -92,10 +108,13 @@ export default function FieldHandTab() {
     ]
 
 
-    if(user?.role == "Admin")
-    {
+    if (user?.role == "Admin") {
         gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
-        gridColumnDefinition.push(GenericDeleteButton(functions.delete))
+        gridColumnDefinition.push(GenericDeleteButton(
+            (id) => ({ message: `Successfully deleted Field Hand ${id}`, severity: "success", duration: 3000 }),
+            (id, ex) => ({ message: `Failed to delete Field Hand ${id}`, severity: "error", duration: 3000 }),
+            setCurrentSnackbarState, 
+            functions.delete))
     }
 
 
@@ -114,6 +133,8 @@ export default function FieldHandTab() {
                 setCurrentDialogDefinition={setCurrentDialogDefinition}
                 dialogOpen={dialogOpen}
                 setDialogOpen={setDialogOpen}
+                snackbarState={snackbarState}
+                setSnackbarState={setCurrentSnackbarState}
             />
         </>
     )

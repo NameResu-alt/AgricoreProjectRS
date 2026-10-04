@@ -3,15 +3,15 @@ import { useAuth } from "../context/AuthContext";
 import type { ServiceReportCreate, ServiceReportRead } from "../api/schemas/service_report";
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn } from "./GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
 import { ApiRounded } from "@mui/icons-material";
 
-export default function ServiceReportTab(){
-    const {user} = useAuth()
+export default function ServiceReportTab() {
+    const { user } = useAuth()
     const [data, setData] = useState<ServiceReportRead[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
-
+    const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
     const functions = createDefaultFunctions("/service_reports", setData)
 
     const createDialog: DialogDefinition<ServiceReportCreate> = {
@@ -38,17 +38,25 @@ export default function ServiceReportTab(){
                 type: "number"
             }
         ],
-        submitAction: async (value, id)=>{
+        submitAction: async (value, id) => {
             await functions.post(value)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully created Service Report`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName: "Create",
-        onDialogClose: ()=>setDialogOpen(false),
-        destroyDialog: ()=>setCurrentDialogDefinition(null),
-        onErrorOccurred: (err, setErrorMessage)=>{
-            if(err.code == "FOREIGN_KEY_VIOLATION"){
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+        onErrorOccurred: (err, setErrorMessage) => {
+            if (err.code == "FOREIGN_KEY_VIOLATION") {
                 setErrorMessage(`There's no matching field job with provided id`)
             }
-            else{
+            else {
                 setErrorMessage("An error occurred")
             }
         }
@@ -79,17 +87,25 @@ export default function ServiceReportTab(){
                 type: "number"
             }
         ],
-        submitAction: async (value, id)=>{
-            await functions.put(value,id!)
+        submitAction: async (value, id) => {
+            await functions.put(value, id!)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully updated Service Report ${id}`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName: "Update",
-        onDialogClose: ()=>setDialogOpen(false),
-        destroyDialog: ()=>setCurrentDialogDefinition(null),
-        onErrorOccurred: (err, setErrorMessage)=>{
-            if(err.code == "FOREIGN_KEY_VIOLATION"){
+        onDialogClose: () => setDialogOpen(false),
+        destroyDialog: () => setCurrentDialogDefinition(null),
+        onErrorOccurred: (err, setErrorMessage) => {
+            if (err.code == "FOREIGN_KEY_VIOLATION") {
                 setErrorMessage(`There's no matching field job with provided id`)
             }
-            else{
+            else {
                 setErrorMessage("An error occurred")
             }
         }
@@ -99,7 +115,7 @@ export default function ServiceReportTab(){
         {
             field: "id",
             headerName: "ID",
-            type:"number",
+            type: "number",
             width: 30
         },
         {
@@ -108,45 +124,50 @@ export default function ServiceReportTab(){
         },
         {
             field: "notes",
-            headerName:"Notes"
+            headerName: "Notes"
         },
         {
-            field:"timestamp",
-            headerName:"Timestamp",
+            field: "timestamp",
+            headerName: "Timestamp",
             type: "dateTime",
-            valueGetter: (value, row, column, apiRef)=>{
+            valueGetter: (value, row, column, apiRef) => {
                 return new Date(value)
             }
         },
         {
             field: "field_job_id",
-            headerName:"Field Job ID",
-            type:"number"
+            headerName: "Field Job ID",
+            type: "number"
         }
     ]
 
-    if(user?.role == "Admin")
-    {
+    if (user?.role == "Admin") {
         columnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
-        columnDefinitions.push(GenericDeleteButton(functions.delete))
+        columnDefinitions.push(GenericDeleteButton(
+            (id) => ({ message: `Successfully deleted Service Report ${id}`, severity: "success", duration: 3000 }),
+            (id, ex) => ({ message: `Failed to delete Service Report ${id}`, severity: "error", duration: 3000 }),
+            setCurrentSnackbarState,
+             functions.delete))
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         functions.get()
     }
-    ,[])
+        , [])
 
 
     return (
-        <GenericTabBody 
-            userRole = {user?.role}
-            data = {data}
-            gridColumnDefinition = {columnDefinitions}
-            createDialog = {createDialog}
-            currentDialogDefinition = {currentDialogDefinition}
-            setCurrentDialogDefinition = {setCurrentDialogDefinition}
-            dialogOpen = {dialogOpen}
-            setDialogOpen = {setDialogOpen}
+        <GenericTabBody
+            userRole={user?.role}
+            data={data}
+            gridColumnDefinition={columnDefinitions}
+            createDialog={createDialog}
+            currentDialogDefinition={currentDialogDefinition}
+            setCurrentDialogDefinition={setCurrentDialogDefinition}
+            dialogOpen={dialogOpen}
+            setDialogOpen={setDialogOpen}
+            snackbarState={snackbarState}
+            setSnackbarState = {setCurrentSnackbarState}
         />
     )
 }

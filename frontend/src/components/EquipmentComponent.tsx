@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { EquipmentStatus, type EquipmentCreate, type EquipmentRead, type EquipmentUpdate } from "../api/schemas/equipment";
 import { type DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import type { GenericGridColumn } from "./GenericDataGridComponent";
+import type { GenericGridColumn, SnackbarState} from "./GenericDataGridComponent";
 import { Button } from "@mui/material";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
 import { HTTPException } from "../api/schemas/errors";
@@ -12,9 +12,10 @@ import CircularProgressWithLabel from "./CircularProgressWithLabel";
 export default function EquipmentTab(){
     const {user} = useAuth()
     const [data, setData] = useState<EquipmentRead[]>([])
-    const [errorOccurred, setErrorOccurred] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
+    const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
+
 
     const functions = createDefaultFunctions("/equipment", setData)
 
@@ -50,6 +51,14 @@ export default function EquipmentTab(){
         ],
         submitAction: async (value, id) => {
             await functions.post(value)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully created Equipment`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName: "Create",
         onDialogClose: ()=>setDialogOpen(false),
@@ -96,10 +105,17 @@ export default function EquipmentTab(){
         ],
         submitAction: async (value, id) => {
             await functions.put(value,id!)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully updated Equipment ${id}`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName: "Update",
         onDialogClose: ()=>setDialogOpen(false),
-        setErrorState: setErrorOccurred,
         onErrorOccurred: (err, setErrorMessage)=>{
             if(err.code == "FOREIGN_KEY_VIOLATION"){
                 setErrorMessage(`There's no matching facility with provided id`)
@@ -149,7 +165,10 @@ export default function EquipmentTab(){
     if(user?.role == "Admin")
     {
         gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
-        gridColumnDefinition.push(GenericDeleteButton(functions.delete))
+        gridColumnDefinition.push(GenericDeleteButton(
+            (id)=>({message:`Successfully deleted Equipment ${id}`, severity:"success", duration:3000}),
+            (id, ex)=>({message:`Failed to delete Equipment ${id}`, severity:"error", duration:3000}),
+        setCurrentSnackbarState, functions.delete))
     }
 
     useEffect(()=>{
@@ -166,6 +185,8 @@ export default function EquipmentTab(){
                 setCurrentDialogDefinition={setCurrentDialogDefinition}
                 dialogOpen={dialogOpen}
                 setDialogOpen={setDialogOpen}
+                snackbarState = {snackbarState}
+                setSnackbarState = {setCurrentSnackbarState}
             />
         </>
     )

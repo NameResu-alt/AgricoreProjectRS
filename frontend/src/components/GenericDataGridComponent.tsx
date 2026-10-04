@@ -2,7 +2,7 @@ import { DataGrid, type GridColDef, type GridTreeNodeWithRender, type GridValidR
 import type { GridRenderCellParams } from "@mui/x-data-grid/models";
 import type React from "react";
 import { GenericDialog, type DialogDefinition } from "./DialogComponent";
-import { Box, Button } from "@mui/material";
+import { Alert, Box, Button, Snackbar } from "@mui/material";
 import type { UserRole } from "../api/schemas/auth";
 import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -14,12 +14,24 @@ export type GenericGridColumn<T extends GridValidRowModel> = {
     type?: "string" | "number" | "actions" | "dateTime";
     width?: number;
     renderCell?: (params: GridRenderCellParams<T, any, any, GridTreeNodeWithRender>) => React.JSX.Element;
-    valueGetter?: (value: any,row: T, column: GridColDef,apiRef: React.RefObject<GridApiCommunity>) => any
+    valueGetter?: (value: any, row: T, column: GridColDef, apiRef: React.RefObject<GridApiCommunity>) => any
 
 };
 
+type GenericSnackbarOptions = {
+    message: string,
+    severity: "success" | "info" | "warning" | "error",
+    duration: number
+}
+
+export type SnackbarState = {
+    open: boolean,
+    options: GenericSnackbarOptions | null
+}
+
+
 export function GenericUpdateButton<T>(updateDialog: DialogDefinition<T>, setCurrentDialogDefinition: (value: React.SetStateAction<DialogDefinition<T> | null>) => void, setDialogOpen: (value: React.SetStateAction<boolean>) => void): GenericGridColumn<any> {
-    
+
     return {
         field: "update",
         headerName: "",
@@ -38,34 +50,48 @@ export function GenericUpdateButton<T>(updateDialog: DialogDefinition<T>, setCur
                     setDialogOpen(true)
                 }
                 }
-                    sx={{ height: "75%", width: "50%", backgroundColor: "blue", color: "white" }}>
-                        <SettingsIcon></SettingsIcon>
-                    </Button>
+                    sx={{ height: "75%", width: "50%" }}
+                    variant={"contained"}
+                    color={"primary"}
+                >
+                    <SettingsIcon></SettingsIcon>
+                </Button>
             )
             //<button onClick={()=>actions.onDelete(Number(params.id))}>Test</button>
         },
     }
 }
 
-export function GenericDeleteButton(deleteFunction: (id: number) => Promise<void>): GenericGridColumn<any> {
+export function GenericDeleteButton(successSnackbar: (id: number)=> GenericSnackbarOptions, failureSnackbar: (id:number, ex: any)=> GenericSnackbarOptions, setCurrentSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>> ,  deleteFunction: (id: number) => Promise<void>): GenericGridColumn<any> {
     return {
         field: "delete",
         headerName: "",
         type: "actions",
         width: 75,
-        renderCell:  (params) => {
+        renderCell: (params) => {
             return (
                 <Button
                     onClick={async () => {
-                        try{
+                        try {
                             await deleteFunction(params.row.id)
+                            setCurrentSnackbarState({
+                                open: true,
+                                options: successSnackbar(params.row.id)
+                            })
                         }
-                        catch{
-                            alert("Unable to delete!")
+                        catch(ex) {
+                            setCurrentSnackbarState(
+                                {
+                                    open: true,
+                                    options: failureSnackbar(params.row.id, ex)
+                                }
+                            )
                         }
-                        
+
                     }}
-                    sx={{ height: "75%", width: "50%", backgroundColor: "red", color: "white" }}
+                    sx={{ height: "75%", width: "50%" }}
+                    variant={"contained"}
+                    color={"error"}
                 >
                     <DeleteIcon></DeleteIcon>
                 </Button>
@@ -74,10 +100,10 @@ export function GenericDeleteButton(deleteFunction: (id: number) => Promise<void
     }
 }
 
-export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen}: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState }: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>}) {
     return (
         <>
-            <Box sx={{ paddingTop: 2, height: "100%", width:"100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column"}}>
+            <Box sx={{ paddingTop: 2, height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
                 {
                     userRole === "Admin" &&
                     <Button
@@ -85,8 +111,8 @@ export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gr
                             setCurrentDialogDefinition(createDialog)
                             setDialogOpen(true)
                         }}
-                        variant="contained"
-                        sx={{ backgroundColor: "green" }}
+                        variant={"contained"}
+                        color={"success"}
                     >
                         Create
                     </Button>
@@ -95,8 +121,21 @@ export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gr
                 <GenericDataGridV3 rowData={data} columns={gridColumnDefinition} />
                 {
                     currentDialogDefinition &&
-                    <GenericDialog definition={currentDialogDefinition} dialogOpen={dialogOpen}/>
+                    <GenericDialog definition={currentDialogDefinition} dialogOpen={dialogOpen} />
                 }
+
+                <Snackbar 
+                    open={snackbarState.open}
+                    autoHideDuration={snackbarState.options?.duration ?? 3000}
+                    onClose={()=>setSnackbarState({open: false, options: snackbarState.options})}
+                    slotProps ={{
+                        transition:{
+                            onExited: ()=>setSnackbarState({open:false, options: null})
+                        }
+                    }}
+                >
+                    <Alert severity={snackbarState.options?.severity} variant={"filled"}>{snackbarState.options?.message}</Alert>
+                </Snackbar>
             </Box>
 
 

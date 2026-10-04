@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import type { FarmCreate, FarmRead, FarmUpdate } from "../api/schemas/farm";
-import type { GenericGridColumn } from "./GenericDataGridComponent"
+import type { GenericGridColumn, SnackbarState } from "./GenericDataGridComponent"
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
 import { Button, Snackbar } from "@mui/material";
 import {type DialogDefinition} from "./DialogComponent"
@@ -13,7 +13,7 @@ export default function FarmTab() {
     const [data, setData] = useState<FarmRead[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
-    
+    const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
 
     const functions = createDefaultFunctions("/farms", setData)
 
@@ -43,6 +43,14 @@ export default function FarmTab() {
         ],
         submitAction: async (value: FarmUpdate, id?: number) => {
             await functions.put(value, id!)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully updated Farm ${id}`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
         },
         actionName:"Update",
         onDialogClose: ()=>{setDialogOpen(false)},
@@ -77,6 +85,14 @@ export default function FarmTab() {
         submitAction: async (value: FarmCreate, id?: number)=>{
             //alert(`I would have submitted this!: ${JSON.stringify(value)}`)
             await functions.post(value)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message:`Successfully created Farm`,
+                    severity:"success",
+                    duration:2000
+                }
+            })
             //functions.post(value)
         },
         actionName:"Create",
@@ -113,7 +129,10 @@ export default function FarmTab() {
     if(user?.role == "Admin")
     {
         dataGridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
-        dataGridColumnDefinition.push(GenericDeleteButton(functions.delete))
+        dataGridColumnDefinition.push(GenericDeleteButton(
+            (id)=>({message:`Successfully deleted Farm ${id}`, severity:"success", duration: 3000}),
+            (id, ex)=>({message:`Failed to delete Farm ${id}`, severity:"error", duration: 3000}),
+            setCurrentSnackbarState,functions.delete))
     }
 
     useEffect(()=>{
@@ -130,9 +149,11 @@ export default function FarmTab() {
                 setCurrentDialogDefinition={setCurrentDialogDefinition}
                 dialogOpen={dialogOpen}
                 setDialogOpen={setDialogOpen}
+                snackbarState = {snackbarState}
+                setSnackbarState = {setCurrentSnackbarState}
             />
             <Snackbar>
-                
+
             </Snackbar>
         </>
     )

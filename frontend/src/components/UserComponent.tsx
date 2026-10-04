@@ -3,14 +3,14 @@ import { useAuth } from "../context/AuthContext";
 import { UserRole, type UserCreate, type UserRead } from "../api/schemas/auth";
 import type { DialogDefinition } from "./DialogComponent";
 import apiClient from "../api/client";
-import { GenericDeleteButton, GenericTabBody, type GenericGridColumn } from "./GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
 
 export default function UserTab() {
     const { user } = useAuth()
     const [data, setData] = useState<UserRead[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
-
+    const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
 
     async function getUsers() {
         const response = await apiClient.get<UserRead[]>("/auth")
@@ -97,6 +97,8 @@ export default function UserTab() {
                 setDialogOpen={setDialogOpen}
                 currentDialogDefinition={currentDialogDefinition}
                 setCurrentDialogDefinition={setCurrentDialogDefinition}
+                snackbarState={snackbarState}
+                setSnackbarState={setCurrentSnackbarState}
             />
         </>
     )

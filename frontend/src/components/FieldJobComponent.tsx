@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { FieldJobPriority, FieldJobStatus, type FieldJobCreate, type FieldJobRead, type FieldJobUpdate, type FieldJobPatchStatus } from "../api/schemas/field_job";
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import type { GenericGridColumn } from "./GenericDataGridComponent";
+import type { GenericGridColumn, SnackbarState } from "./GenericDataGridComponent";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
 import apiClient from "../api/client";
 import Button from "@mui/material/Button";
@@ -14,7 +14,7 @@ export default function FieldJobTab() {
     const [data, setData] = useState<FieldJobRead[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
-
+    const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
     const functions = createDefaultFunctions("/field_jobs", setData)
 
     const createDialog: DialogDefinition<FieldJobCreate> = {
@@ -50,21 +50,29 @@ export default function FieldJobTab() {
         ],
         submitAction: async (value, id) => {
             await functions.post(value)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message: `Successfully created Field Job`,
+                    severity: "success",
+                    duration: 2000
+                }
+            })
         },
         actionName: "Create",
         onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null),
-         onErrorOccurred: (err, setErrorMessage)=>{
-            if(err.code == "FOREIGN_KEY_VIOLATION"){
-                if(err.field == "equipment_id"){
-                    setErrorMessage(`There's no matching equipment with provided id`)
+        onErrorOccurred: (err, setErrorMessage) => {
+            if (err.code == "FOREIGN_KEY_VIOLATION") {
+                if (err.field == "equipment_id") {
+                    setErrorMessage(`There's no matching equipment with provided equipment id`)
                 }
-                else{
-                    setErrorMessage(`There's no matching field hand with provided id`)
+                else {
+                    setErrorMessage(`There's no matching field hand with provided operator id`)
                 }
-                
+
             }
-            else{
+            else {
                 setErrorMessage("An error occurred")
             }
         }
@@ -103,21 +111,29 @@ export default function FieldJobTab() {
         ],
         submitAction: async (value, id) => {
             await functions.put(value, id!)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message: `Successfully updated Field Job ${id}`,
+                    severity: "success",
+                    duration: 2000
+                }
+            })
         },
         actionName: "Update",
         onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null),
-         onErrorOccurred: (err, setErrorMessage)=>{
-            if(err.code == "FOREIGN_KEY_VIOLATION"){
-                if(err.field == "equipment_id"){
+        onErrorOccurred: (err, setErrorMessage) => {
+            if (err.code == "FOREIGN_KEY_VIOLATION") {
+                if (err.field == "equipment_id") {
                     setErrorMessage(`There's no matching equipment with provided id`)
                 }
-                else{
+                else {
                     setErrorMessage(`There's no matching field hand with provided id`)
                 }
-                
+
             }
-            else{
+            else {
                 setErrorMessage("An error occurred")
             }
         }
@@ -139,7 +155,28 @@ export default function FieldJobTab() {
             }
         ],
         submitAction: async (value, id) => {
-            await patchFieldJobStatus(value, id!)
+            try {
+                await patchFieldJobStatus(value, id!)
+                setCurrentSnackbarState({
+                    open: true,
+                    options: {
+                        message: `Successfully updated status of Field Job ${id}`,
+                        severity: "success",
+                        duration: 2000
+                    }
+                })
+            }
+
+            catch {
+                setCurrentSnackbarState({
+                    open: true,
+                    options: {
+                        message: `Failed to update status of Field Job ${id}`,
+                        severity: "success",
+                        duration: 2000
+                    }
+                })
+            }
         },
         actionName: "Update",
         onDialogClose: () => setDialogOpen(false),
@@ -173,23 +210,20 @@ export default function FieldJobTab() {
         ],
         submitAction: async (value, id) => {
             await apiClient.post("/service_reports", value)
+            setCurrentSnackbarState({
+                open: true,
+                options: {
+                    message: `Successfully created Service Report for Field Job ${id}`,
+                    severity: "success",
+                    duration: 4000
+                }
+            })
         },
         actionName: "Create",
         onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null),
-         onErrorOccurred: (err, setErrorMessage)=>{
-            if(err.code == "FOREIGN_KEY_VIOLATION"){
-                if(err.field == "equipment_id"){
-                    setErrorMessage(`There's no matching equipment with provided id`)
-                }
-                else{
-                    setErrorMessage(`There's no matching field hand with provided id`)
-                }
-                
-            }
-            else{
-                setErrorMessage("An error occurred")
-            }
+        onErrorOccurred: (err, setErrorMessage) => {
+            setErrorMessage("An error occurred")
         }
     }
 
@@ -244,8 +278,8 @@ export default function FieldJobTab() {
                     setDialogOpen(true)
                 }
             }
-            
-            sx={{height: "90%", width:"100%"}}
+
+                sx={{ height: "90%", width: "100%" }}
             >
                 Write Report</Button>)
         }
@@ -254,7 +288,10 @@ export default function FieldJobTab() {
     if (user?.role == "Admin") {
         gridColumnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
         gridColumnDefinitions.push(writeReport)
-        gridColumnDefinitions.push(GenericDeleteButton(functions.delete))
+        gridColumnDefinitions.push(GenericDeleteButton(
+            (id) => ({ message: `Successfully deleted Field Job ${id}`, severity: "success", duration: 3000 }),
+            (id, ex) => ({ message: `Failed to delete Field Job ${id}`, severity: "error", duration: 3000 }),
+            setCurrentSnackbarState, functions.delete))
     }
     else if (user?.role == "Field_Hand") {
         const patchOnly: GenericGridColumn<FieldJobRead> = {
@@ -301,6 +338,8 @@ export default function FieldJobTab() {
             setCurrentDialogDefinition={setCurrentDialogDefinition}
             dialogOpen={dialogOpen}
             setDialogOpen={setDialogOpen}
+            snackbarState={snackbarState}
+            setSnackbarState={setCurrentSnackbarState}
         />
     )
 

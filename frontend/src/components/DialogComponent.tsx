@@ -30,7 +30,6 @@ export interface DialogDefinition<T> {
     submitAction: (value: T, id?: number) => Promise<void>;
     actionName: string;
     onDialogClose: () => void;
-    setErrorState?: React.Dispatch<React.SetStateAction<boolean>>;
     onErrorOccurred?: (response: HTTPException, setErrorMessage: React.Dispatch<React.SetStateAction<string>>) => void;
     destroyDialog: () => void;
 }
@@ -130,7 +129,7 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
                                 setErrorField(error?.field ?? "");
                                 setErrorState(true);
                             } else {
-                                alert("This shouldn't be possible");
+                                alert(`This shouldn't be possible: ${JSON.stringify(ex)}`);
                             }
                         }
                     },
