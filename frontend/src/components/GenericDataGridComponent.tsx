@@ -1,4 +1,4 @@
-import { DataGrid, type GridColDef, type GridTreeNodeWithRender, type GridValidRowModel } from "@mui/x-data-grid";
+import { DataGrid, GridFooter, GridFooterContainer, GridPagination, GridSelectedRowCount, type GridColDef, type GridTreeNodeWithRender, type GridValidRowModel } from "@mui/x-data-grid";
 import type { GridRenderCellParams } from "@mui/x-data-grid/models";
 import type React from "react";
 import { GenericDialog, type DialogDefinition } from "./DialogComponent";
@@ -62,7 +62,7 @@ export function GenericUpdateButton<T>(updateDialog: DialogDefinition<T>, setCur
     }
 }
 
-export function GenericDeleteButton(successSnackbar: (id: number)=> GenericSnackbarOptions, failureSnackbar: (id:number, ex: any)=> GenericSnackbarOptions, setCurrentSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>> ,  deleteFunction: (id: number) => Promise<void>): GenericGridColumn<any> {
+export function GenericDeleteButton(successSnackbar: (id: number) => GenericSnackbarOptions, failureSnackbar: (id: number, ex: any) => GenericSnackbarOptions, setCurrentSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, deleteFunction: (id: number) => Promise<void>): GenericGridColumn<any> {
     return {
         field: "delete",
         headerName: "",
@@ -79,7 +79,7 @@ export function GenericDeleteButton(successSnackbar: (id: number)=> GenericSnack
                                 options: successSnackbar(params.row.id)
                             })
                         }
-                        catch(ex) {
+                        catch (ex) {
                             setCurrentSnackbarState(
                                 {
                                     open: true,
@@ -100,7 +100,7 @@ export function GenericDeleteButton(successSnackbar: (id: number)=> GenericSnack
     }
 }
 
-export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState }: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>}) {
+export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState }: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>> }) {
     return (
         <>
             <Box sx={{ paddingTop: 2, height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
@@ -124,13 +124,13 @@ export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gr
                     <GenericDialog definition={currentDialogDefinition} dialogOpen={dialogOpen} />
                 }
 
-                <Snackbar 
+                <Snackbar
                     open={snackbarState.open}
                     autoHideDuration={snackbarState.options?.duration ?? 3000}
-                    onClose={()=>setSnackbarState({open: false, options: snackbarState.options})}
-                    slotProps ={{
-                        transition:{
-                            onExited: ()=>setSnackbarState({open:false, options: null})
+                    onClose={() => setSnackbarState({ open: false, options: snackbarState.options })}
+                    slotProps={{
+                        transition: {
+                            onExited: () => setSnackbarState({ open: false, options: null })
                         }
                     }}
                 >
@@ -141,6 +141,14 @@ export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gr
 
         </>
     )
+}
+
+function CustomFooter() {
+  return (
+    <GridFooterContainer>
+      <GridPagination />
+    </GridFooterContainer>
+  );
 }
 
 //Won't own the data anymore, just make the datagrid!.
@@ -160,6 +168,11 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
 
     return (
         <DataGrid
+            slots={{
+                footer: CustomFooter
+            }}
+            onPaginationModelChange={() => { }
+            }
             columns={prepedColumns}
             rows={rowData}
             sx={{ p: 2, flex: 1 }}

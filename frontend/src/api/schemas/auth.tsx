@@ -44,6 +44,7 @@ interface UserBase{
 
 interface UserCreate extends UserBase{
     password: string
+    confirm_password: string
 }
 
 interface UserRead extends UserBase{

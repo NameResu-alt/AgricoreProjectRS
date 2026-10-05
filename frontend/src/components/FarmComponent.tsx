@@ -152,9 +152,6 @@ export default function FarmTab() {
                 snackbarState = {snackbarState}
                 setSnackbarState = {setCurrentSnackbarState}
             />
-            <Snackbar>
-
-            </Snackbar>
         </>
     )
 
