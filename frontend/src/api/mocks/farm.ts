@@ -1,4 +1,4 @@
-import { type FarmRead, type FarmCreate} from '../schemas/farm';
+import { type FarmRead} from '../schemas/farm';
 
 let farm_mocks: FarmRead[] = [
     {

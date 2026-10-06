@@ -1,8 +1,8 @@
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Snackbar, TextField, useTheme } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem,  TextField, useTheme } from "@mui/material";
 import type React from "react";
-import axios, { AxiosError, type AxiosResponse } from "axios"
+import { AxiosError } from "axios"
 import type { HTTPException } from "../api/schemas/errors";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 type InputType = "text" | "number" | "password"
 
 type DialogFields<T> = {
@@ -105,7 +105,7 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
                         const formData = new FormData(form);
 
                         const data = Object.fromEntries(
-                            [...formData.entries()].filter(([key, value]) => {
+                            [...formData.entries()].filter(([_, value]) => {
                                 return typeof value !== "string" || value.trim() !== "";
                             })
                         );

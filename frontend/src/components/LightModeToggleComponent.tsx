@@ -1,7 +1,6 @@
 import {
     ToggleButton,
     ToggleButtonGroup,
-    IconButton,
     useColorScheme,
 } from "@mui/material";
 
@@ -11,19 +10,6 @@ import ComputerIcon from "@mui/icons-material/Computer";
 
 export default function LightModeToggleButton() {
     const { mode, setMode } = useColorScheme();
-
-    let currentIcon;
-
-    switch (mode) {
-        case "dark":
-            currentIcon = <DarkModeIcon />;
-            break;
-        case "light":
-            currentIcon = <LightModeIcon />;
-            break;
-        default:
-            currentIcon = <ComputerIcon />;
-    }
 
     const handleChange = (
         _: React.MouseEvent<HTMLElement>,

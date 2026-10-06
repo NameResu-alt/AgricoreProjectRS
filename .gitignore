@@ -1,6 +1,7 @@
 # Environment / secrets
 .env
 .env.*
+.env.production
 !.env.example
 *.key
 *.pem
@@ -59,3 +60,9 @@ coverage/
 
 # Local configuration
 *.local
+
+lambda-env.json
+package/
+lambda_deployment.zip
+
+redeploy.ps1

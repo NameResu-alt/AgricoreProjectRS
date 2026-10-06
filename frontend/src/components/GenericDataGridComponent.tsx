@@ -1,8 +1,8 @@
-import { DataGrid, GridFooter, GridFooterContainer, GridPagination, GridSelectedRowCount, type GridColDef, type GridTreeNodeWithRender, type GridValidRowModel } from "@mui/x-data-grid";
+import { DataGrid, GridFooterContainer, GridPagination, type GridColDef, type GridTreeNodeWithRender, type GridValidRowModel } from "@mui/x-data-grid";
 import type { GridRenderCellParams } from "@mui/x-data-grid/models";
 import type React from "react";
 import { GenericDialog, type DialogDefinition } from "./DialogComponent";
-import { Alert, Box, Button, Snackbar, useTheme } from "@mui/material";
+import { Alert, Box, Button, Snackbar} from "@mui/material";
 import type { UserRole } from "../api/schemas/auth";
 import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import DeleteIcon from '@mui/icons-material/Delete';

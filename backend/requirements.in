@@ -1,0 +1,9 @@
+asyncpg
+fastapi
+mangum
+pydantic
+pydantic-settings
+PyJWT
+bcrypt
+python-multipart
+SQLAlchemy[asyncio]

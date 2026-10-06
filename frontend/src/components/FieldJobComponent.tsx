@@ -48,7 +48,7 @@ export default function FieldJobTab() {
                 type: "number"
             }
         ],
-        submitAction: async (value, id) => {
+        submitAction: async (value, _) => {
             await functions.post(value)
             setCurrentSnackbarState({
                 open: true,
@@ -222,7 +222,7 @@ export default function FieldJobTab() {
         actionName: "Create",
         onDialogClose: () => setDialogOpen(false),
         destroyDialog: () => setCurrentDialogDefinition(null),
-        onErrorOccurred: (err, setErrorMessage) => {
+        onErrorOccurred: (_, setErrorMessage) => {
             setErrorMessage("An error occurred")
         }
     }
@@ -290,7 +290,7 @@ export default function FieldJobTab() {
         gridColumnDefinitions.push(writeReport)
         gridColumnDefinitions.push(GenericDeleteButton(
             (id) => ({ message: `Successfully deleted Field Job ${id}`, severity: "success", duration: 3000 }),
-            (id, ex) => ({ message: `Failed to delete Field Job ${id}`, severity: "error", duration: 3000 }),
+            (id, _) => ({ message: `Failed to delete Field Job ${id}`, severity: "error", duration: 3000 }),
             setCurrentSnackbarState, functions.delete))
     }
     else if (user?.role == "Field_Hand") {

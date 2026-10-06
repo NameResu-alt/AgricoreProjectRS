@@ -1,4 +1,3 @@
-import base from "@emotion/styled/base";
 import apiClient from "./client";
 import type React from "react";
 

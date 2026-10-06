@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import type { FarmCreate, FarmRead, FarmUpdate } from "../api/schemas/farm";
 import type { GenericGridColumn, SnackbarState } from "./GenericDataGridComponent"
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
-import { Button, Snackbar } from "@mui/material";
 import {type DialogDefinition} from "./DialogComponent"
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 
@@ -82,7 +81,7 @@ export default function FarmTab() {
             }
 
         ],
-        submitAction: async (value: FarmCreate, id?: number)=>{
+        submitAction: async (value: FarmCreate, _?: number)=>{
             //alert(`I would have submitted this!: ${JSON.stringify(value)}`)
             await functions.post(value)
             setCurrentSnackbarState({
@@ -131,7 +130,7 @@ export default function FarmTab() {
         dataGridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
         dataGridColumnDefinition.push(GenericDeleteButton(
             (id)=>({message:`Successfully deleted Farm ${id}`, severity:"success", duration: 3000}),
-            (id, ex)=>({message:`Failed to delete Farm ${id}`, severity:"error", duration: 3000}),
+            (id, _)=>({message:`Failed to delete Farm ${id}`, severity:"error", duration: 3000}),
             setCurrentSnackbarState,functions.delete))
     }
 

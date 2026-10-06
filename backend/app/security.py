@@ -3,8 +3,9 @@ import jwt
 import bcrypt
 from datetime import timedelta, timezone, datetime
 from typing import Any
+from app.config import settings
 
-SECRET_KEY = os.environ.get("SECRET_KEY","<INSERT_SECRET_KEY>")
+SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
 DEFAULT_EXPIRE_TIME_MINUTES = 30
 

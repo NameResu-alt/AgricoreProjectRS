@@ -1,9 +1,7 @@
-import useState from 'react';
+
 import { useAuth } from '../context/AuthContext';
 import { Box, Paper, TextField, Button, Typography} from '@mui/material';
 
-import apiClient from "../api/client"
-import { type LoginCredentials} from '../api/schemas/auth';
 import LightModeToggleButton from './LightModeToggleComponent';
 
 export default function LoginForm(){

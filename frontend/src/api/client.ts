@@ -2,7 +2,7 @@ import axios from 'axios';
 import { jwtDecode } from "jwt-decode"
 
 const apiClient = axios.create({
-    baseURL: "http://127.0.0.1:8000"
+    baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 })
 
 //Request interceptor runs on every outgoing requests

@@ -6,18 +6,18 @@ from fastapi.responses import JSONResponse
 from asyncpg import exceptions
 from app.routers import FarmRouter, EquipmentRouter, FieldHandRouter, FieldJobRouter, ServiceReportRouter, BusinessRouter, AuthRouter
 from app.models import Base
-
+from app.config import settings
 app = FastAPI(
     title="Agricore",
     description="Agricore Control Flow",
     version="0.1.0"
 )
 
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_ORIGIN = settings.frontend_origin
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=[FRONTEND_ORIGIN, "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]

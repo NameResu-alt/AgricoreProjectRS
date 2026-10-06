@@ -21,7 +21,7 @@ import LightModeToggleButton from "./LightModeToggleComponent";
 
 export default function MainPage() {
     const theme = useTheme()
-    const { mode, setMode } = useColorScheme();
+    const { mode} = useColorScheme();
 
     const { user, logout } = useAuth()
     const [currentTab, setCurrentTab] = useState(0)
@@ -108,7 +108,7 @@ export default function MainPage() {
                         AgriCore
                     </Typography>
                 </Box>
-                <Tabs sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }} value={currentTab} onChange={(event, newValue: number) => setCurrentTab(newValue)}>
+                <Tabs sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }} value={currentTab} onChange={(_, newValue: number) => setCurrentTab(newValue)}>
                     {
                         tabs.map((tab: any) => {
                             return (

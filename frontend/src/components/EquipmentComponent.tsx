@@ -4,9 +4,7 @@ import { EquipmentStatus, type EquipmentCreate, type EquipmentRead, type Equipme
 import { type DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 import type { GenericGridColumn, SnackbarState} from "./GenericDataGridComponent";
-import { Button } from "@mui/material";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
-import { HTTPException } from "../api/schemas/errors";
 import CircularProgressWithLabel from "./CircularProgressWithLabel";
 
 export default function EquipmentTab(){
@@ -49,7 +47,7 @@ export default function EquipmentTab(){
                 type:"number"
             }
         ],
-        submitAction: async (value, id) => {
+        submitAction: async (value, _) => {
             await functions.post(value)
             setCurrentSnackbarState({
                 open: true,
@@ -167,7 +165,7 @@ export default function EquipmentTab(){
         gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
         gridColumnDefinition.push(GenericDeleteButton(
             (id)=>({message:`Successfully deleted Equipment ${id}`, severity:"success", duration:3000}),
-            (id, ex)=>({message:`Failed to delete Equipment ${id}`, severity:"error", duration:3000}),
+            (id, _)=>({message:`Failed to delete Equipment ${id}`, severity:"error", duration:3000}),
         setCurrentSnackbarState, functions.delete))
     }
 

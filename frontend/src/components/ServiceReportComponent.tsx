@@ -4,7 +4,6 @@ import type { ServiceReportCreate, ServiceReportRead } from "../api/schemas/serv
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
-import { ApiRounded } from "@mui/icons-material";
 
 export default function ServiceReportTab() {
     const { user } = useAuth()
@@ -38,7 +37,7 @@ export default function ServiceReportTab() {
                 type: "number"
             }
         ],
-        submitAction: async (value, id) => {
+        submitAction: async (value, _) => {
             await functions.post(value)
             setCurrentSnackbarState({
                 open: true,
@@ -130,7 +129,7 @@ export default function ServiceReportTab() {
             field: "timestamp",
             headerName: "Timestamp",
             type: "dateTime",
-            valueGetter: (value, row, column, apiRef) => {
+            valueGetter: (value, _) => {
                 return new Date(value)
             }
         },
@@ -145,7 +144,7 @@ export default function ServiceReportTab() {
         columnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
         columnDefinitions.push(GenericDeleteButton(
             (id) => ({ message: `Successfully deleted Service Report ${id}`, severity: "success", duration: 3000 }),
-            (id, ex) => ({ message: `Failed to delete Service Report ${id}`, severity: "error", duration: 3000 }),
+            (id, _) => ({ message: `Failed to delete Service Report ${id}`, severity: "error", duration: 3000 }),
             setCurrentSnackbarState,
              functions.delete))
     }

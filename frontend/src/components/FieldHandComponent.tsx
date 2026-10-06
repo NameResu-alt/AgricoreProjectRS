@@ -27,7 +27,7 @@ export default function FieldHandTab() {
                 type: "number"
             }
         ],
-        submitAction: async (value, id) => {
+        submitAction: async (value, _) => {
             await functions.post(value)
             setCurrentSnackbarState({
                 open: true,
@@ -112,7 +112,7 @@ export default function FieldHandTab() {
         gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
         gridColumnDefinition.push(GenericDeleteButton(
             (id) => ({ message: `Successfully deleted Field Hand ${id}`, severity: "success", duration: 3000 }),
-            (id, ex) => ({ message: `Failed to delete Field Hand ${id}`, severity: "error", duration: 3000 }),
+            (id, _) => ({ message: `Failed to delete Field Hand ${id}`, severity: "error", duration: 3000 }),
             setCurrentSnackbarState, 
             functions.delete))
     }

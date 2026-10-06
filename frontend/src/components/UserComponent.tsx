@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { UserRole, type UserCreate, type UserRead } from "../api/schemas/auth";
 import type { DialogDefinition } from "./DialogComponent";
 import apiClient from "../api/client";
-import { GenericDeleteButton, GenericTabBody, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
+import { GenericTabBody, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Button } from "@mui/material";
 export default function UserTab() {
@@ -53,7 +53,7 @@ export default function UserTab() {
                 options: Object.values(UserRole)
             }
         ],
-        submitAction: async (value, id) => {
+        submitAction: async (value, _) => {
             if (value.password != value.confirm_password) {
 
                 setCurrentSnackbarState({
