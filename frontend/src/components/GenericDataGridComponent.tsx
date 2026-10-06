@@ -2,7 +2,7 @@ import { DataGrid, GridFooter, GridFooterContainer, GridPagination, GridSelected
 import type { GridRenderCellParams } from "@mui/x-data-grid/models";
 import type React from "react";
 import { GenericDialog, type DialogDefinition } from "./DialogComponent";
-import { Alert, Box, Button, Snackbar } from "@mui/material";
+import { Alert, Box, Button, Snackbar, useTheme } from "@mui/material";
 import type { UserRole } from "../api/schemas/auth";
 import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -54,7 +54,7 @@ export function GenericUpdateButton<T>(updateDialog: DialogDefinition<T>, setCur
                     variant={"contained"}
                     color={"primary"}
                 >
-                    <SettingsIcon></SettingsIcon>
+                    <SettingsIcon sx={{color:"text.primary"}}></SettingsIcon>
                 </Button>
             )
             //<button onClick={()=>actions.onDelete(Number(params.id))}>Test</button>
@@ -93,7 +93,7 @@ export function GenericDeleteButton(successSnackbar: (id: number) => GenericSnac
                     variant={"contained"}
                     color={"error"}
                 >
-                    <DeleteIcon></DeleteIcon>
+                    <DeleteIcon sx={{color:"text.primary"}}></DeleteIcon>
                 </Button>
             )
         }
@@ -103,7 +103,7 @@ export function GenericDeleteButton(successSnackbar: (id: number) => GenericSnac
 export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState }: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>> }) {
     return (
         <>
-            <Box sx={{ paddingTop: 2, height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
+            <Box sx={{height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
                 {
                     userRole === "Admin" &&
                     <Button

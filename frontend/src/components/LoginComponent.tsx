@@ -4,6 +4,7 @@ import { Box, Paper, TextField, Button, Typography} from '@mui/material';
 
 import apiClient from "../api/client"
 import { type LoginCredentials} from '../api/schemas/auth';
+import LightModeToggleButton from './LightModeToggleComponent';
 
 export default function LoginForm(){
     const {login} = useAuth();
@@ -28,8 +29,9 @@ export default function LoginForm(){
     }
 
     return (
-        <Box sx={{height:"100vh",paddingBottom:"20px", display: 'flex', justifyContent: 'center', alignItems:"center", flexDirection:"column"}}>
-            <Paper sx={{padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center"}} component={"form"} action={(formData: FormData)=>executeLogin(formData)}>
+        <Box sx={{backgroundColor:"background.default", height:"100vh",paddingBottom:"20px", display: 'flex', justifyContent: 'center', alignItems:"center", flexDirection:"column"}}>
+            <Paper sx={{backgroundColor:"background.default",padding:"20px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center"}} component={"form"} action={(formData: FormData)=>executeLogin(formData)}>
+                <LightModeToggleButton/>
                 <Typography sx={{margin:0}} variant="h1" gutterBottom>AgriCore</Typography>
                 <TextField 
                     name = "username"

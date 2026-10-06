@@ -1,4 +1,4 @@
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Snackbar, TextField } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Snackbar, TextField, useTheme } from "@mui/material";
 import type React from "react";
 import axios, { AxiosError, type AxiosResponse } from "axios"
 import type { HTTPException } from "../api/schemas/errors";
@@ -35,6 +35,8 @@ export interface DialogDefinition<T> {
 }
 
 export function GenericDialog({ definition, dialogOpen }: { definition: DialogDefinition<any>, dialogOpen: boolean }) {
+
+    const theme = useTheme()
 
     const [errorState, setErrorState] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
@@ -86,7 +88,7 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
 
     return (
         <Dialog
-            open={dialogOpen}
+            open={dialogOpen}            
             onClose={() => {
                 definition.onDialogClose()
                 setErrorState(false)
@@ -138,7 +140,10 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
                         flexDirection: "column",
                         alignItems: "stretch",
                         width: "500px",
-                        maxWidth: "90vw"
+                        maxWidth: "90vw",
+                        overlay:"none",
+                        backgroundColor:theme.palette.background.paper,
+                        border: `2px solid ${theme.palette.divider}`,
                     }
                 }
             }}

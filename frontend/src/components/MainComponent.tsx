@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs, Button, Typography } from "@mui/material"
+import { Box, Tab, Tabs, Button, Typography, useColorScheme, useTheme } from "@mui/material"
 import { useState } from "react"
 import { useAuth } from '../context/AuthContext';
 import UserTab from "./UserComponent"
@@ -15,12 +15,13 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import AccessibilityNewIcon from '@mui/icons-material/AccessibilityNew';
 import TaskIcon from '@mui/icons-material/Task';
-import Logo from "../assets/farm-svgrepo-com.svg"
 import { UserRole } from "../api/schemas/auth";
-
+import LightModeToggleButton from "./LightModeToggleComponent";
 
 
 export default function MainPage() {
+    const theme = useTheme()
+    const { mode, setMode } = useColorScheme();
 
     const { user, logout } = useAuth()
     const [currentTab, setCurrentTab] = useState(0)
@@ -43,7 +44,7 @@ export default function MainPage() {
         key: "farms",
         label: "Farms",
         icon: <AgricultureIcon />,
-        content: <FarmTab/>//<FarmTab />
+        content: <FarmTab />//<FarmTab />
     }
 
     const equipmentTab = {
@@ -93,32 +94,45 @@ export default function MainPage() {
 
     const tabBarheight = "80px"
 
+    const borderBottom =
+        mode === "dark"
+            ? `4px solid ${theme.palette.divider}`
+            : "none";
+
     return (
-        <Box component={"main"} sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-            <Box sx={{ height: tabBarheight, width: "100%", display: "flex", flexDirection: "row", position: "fixed", backgroundColor: "white", zIndex: 1000, justifyContent: "space-between", boxShadow: 3,}}>
-                <Box sx={{ width: "100px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-                    <img src={Logo} alt="Company Logo" width="150" height="50" />
-                    AgriCore
+        <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+            <Box component={"nav"} sx={{ borderBottom: borderBottom, backgroundColor: theme.palette.background.paper, height: tabBarheight, width: "100%", display: "flex", flexDirection: "row", position: "fixed", zIndex: 1000, justifyContent: "space-between", boxShadow: theme.shadows[4] }}>
+                <Box sx={{ backgroundColor: theme.palette.background.paper, width: "100px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+                    <svg fill={theme.palette.text.primary} width="800px" height="800px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 10.652174,1.117445 -1.460768,0.573709 -0.8870582,0.913043 0,1.1464 c -0.038231,-0.0017 -0.2508524,-0.0081 -0.5217391,-0.01427 l 0,-0.245074 c 0,-0.156522 -0.1043478,-0.26087 -0.2608696,-0.26087 -0.1565217,0 -0.2608695,0.104348 -0.2608695,0.26087 l 0,0.239979 C 7.0044116,3.73067 6.74434,3.735032 6.4782609,3.745502 l 0,-0.254245 c 0,-0.156522 -0.1043479,-0.26087 -0.2608696,-0.26087 -0.1565217,0 -0.2608696,0.104348 -0.2608696,0.26087 l 0,0.279211 c -0.3847873,0.02091 -0.7316614,0.04767 -1.0434782,0.07897 l 0,-0.358186 c 0,-0.156522 -0.1043478,-0.26087 -0.2608696,-0.26087 -0.1565217,0 -0.2608696,0.104348 -0.2608696,0.26087 l 0,0.414742 C 4.0279365,3.950824 3.7395322,3.993804 3.594939,4.016048 l -0.00102,0 -0.00153,5.09e-4 c -0.093088,0.01526 -0.1568358,0.0296 -0.2445652,0.04484 l 0,-0.465693 c 0,-0.156521 -0.1043478,-0.260869 -0.2608696,-0.260869 -0.1565217,0 -0.2608695,0.104348 -0.2608695,0.260869 l 0,0.561991 C 2.217776,4.27608 1.7871925,4.378385 1.5217391,4.450665 l 0,-0.54212 c 0,-0.156522 -0.1043478,-0.26087 -0.2608695,-0.26087 C 1.1043478,3.647675 1,3.752023 1,3.908545 l 0,3.10445 C 1.1826087,6.88256 1.3391304,6.752023 1.5217391,6.647675 l 0,-1.657948 C 1.7382507,4.927499 2.177155,4.81565 2.826087,4.687078 l 0,1.100034 c 0,0.05217 0.025985,0.07826 0.025985,0.130434 0.1565218,-0.07826 0.3131454,-0.13074 0.4957541,-0.182914 l 0,-1.142833 c 0.1155566,-0.02046 0.2031402,-0.03997 0.3291441,-0.06063 0.1365341,-0.02101 0.3967502,-0.05917 0.7143341,-0.09935 l 0,0.9375 0,0.05248 0.025985,0 C 4.573811,5.369629 4.7304348,5.317553 4.9130435,5.265379 l 0,-0.891644 C 5.221851,4.342075 5.570074,4.314655 5.9565217,4.293235 l 0,0.737262 c 0.1565218,-0.02609 0.3391305,-0.05238 0.5217392,-0.07847 l 0,-0.684782 c 0.262986,-0.01069 0.5241261,-0.01486 0.7826087,-0.01427 l 0,0.5946 c 0.078261,0 0.1567254,-0.02599 0.2088994,-0.02599 l 0.3128397,0 0,-0.563519 c 0.265385,0.0061 0.4965592,0.0132 0.5217391,0.01427 l 0,0.523267 c 0.3391305,0 0.6521739,-1.02e-4 1.0434782,0.02598 l 0,-1.330332 c 0,-0.156522 0.104348,-0.26087 0.26087,-0.26087 l 2.086956,0 c 0.156522,0 0.26087,0.104348 0.26087,0.26087 l 0,1.513247 C 12.295652,5.030588 12.66087,5.082758 13,5.134933 L 13,2.604192 12.112941,1.717134 10.652174,1.11744 Z m 0,1.069463 c 0.156522,0 0.260869,0.104348 0.260869,0.260869 0,0.156522 -0.104347,0.26087 -0.260869,0.26087 -0.156522,0 -0.26087,-0.104348 -0.26087,-0.26087 0,-0.156521 0.104348,-0.260869 0.26087,-0.260869 z M 8.1479281,5.369313 C 7.0522759,5.891052 5.9827107,6.491459 5.0174933,7.221894 3.6087977,8.239285 2.4348845,9.412893 1.1044497,11.082458 L 1,11.186908 l 0,1.695652 2.3218411,0 0.025985,-0.07847 C 3.5043478,12.386699 4.6258832,10.1957 6.0084919,8.552222 7.2084919,7.11744 8.3827107,6.074063 9.321841,5.395802 8.8783629,5.369712 8.5131455,5.369312 8.1479281,5.369312 Z m 2.0609709,0.07846 C 9.295856,5.969513 7.8610733,7.143324 6.4262907,8.865063 5.1219429,10.456371 4.1042458,12.386908 3.8955502,12.88256 l 2.8435802,0 0.025985,-0.07847 C 7.2607676,11.317134 7.9130435,9.90854 8.6956522,8.604192 9.504348,7.299844 10.391406,6.20409 11.017493,5.499743 10.756624,5.473653 10.495856,5.473863 10.208899,5.447773 Z M 6.7911006,5.473763 C 5.8258832,5.604197 5.0693615,5.813097 4.5737093,5.943532 3.7650137,6.178314 3.1389267,6.360719 2.3563179,6.77811 1.9389266,7.012893 1.5216372,7.273661 1.1564198,7.586704 L 1,7.717139 1,10.378314 C 2.2521739,8.865271 3.3737093,7.7954 4.7041441,6.804095 5.356318,6.308443 6.0606658,5.891154 6.7911006,5.473762 Z m 4.8785664,0.05248 c -0.6,0.678261 -1.643784,1.851868 -2.53074,3.338825 -0.756522,1.252173 -1.3825073,2.608796 -1.8520725,4.017492 l 2.5567255,0 0.02599,-0.05197 c 0.26087,-1.173913 0.599796,-2.322045 0.965014,-3.443784 0.417391,-1.278261 0.939436,-2.556522 1.487262,-3.782609 -0.208696,-0.02609 -0.417391,-0.05187 -0.652174,-0.07796 z m 1.173913,0.15642 c -0.573913,1.252174 -1.095754,2.556216 -1.539232,3.860564 -0.365218,1.095651 -0.678159,2.217594 -0.939029,3.339333 l 2.634681,0 0,-7.199898 -0.15642,0 z" /></svg>
+                    <Typography sx={{ color: theme.palette.text.primary }}>
+                        AgriCore
+                    </Typography>
                 </Box>
-                <Tabs sx={{ backgroundColor: "white", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }} value={currentTab} onChange={(event, newValue: number) => setCurrentTab(newValue)}>
+                <Tabs sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }} value={currentTab} onChange={(event, newValue: number) => setCurrentTab(newValue)}>
                     {
                         tabs.map((tab: any) => {
                             return (
-                                <Tab sx={{ flex: 1 }} key={tab.key} label={tab.label} icon={tab.icon} color="white" />
+                                <Tab sx={{ flex: 1, color: theme.palette.text.primary }} key={tab.key} label={tab.label} icon={tab.icon} />
 
                             )
                         })
                     }
                 </Tabs>
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "200px", flexDirection: "column" }}>
-                    <Typography variant={"body1"}>
-                        {user?.sub}
-                    </Typography>
-                    <Button onClick={() => { logout() }}>Logout</Button>
+                <Box sx={{ display: "flex", justifyContent: "space-around", alignItems: "center", flexDirection: "row", width: "300px" }}>
+                    
+                    <LightModeToggleButton/>
+
+                    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+                        <Typography variant={"body1"} sx={{ color: theme.palette.text.primary }}>
+                            {user?.sub}
+                        </Typography>
+                        <Button onClick={() => { logout() }}>Logout</Button>
+                    </Box>
                 </Box>
+
             </Box>
 
-            <Box sx={{ position: "fixed", top: tabBarheight, bottom: 0, left: 0, right: 0, overflowY: "auto" }}>
+            <Box component={"main"} sx={{ padding: 4, pb: 0, position: "fixed", top: tabBarheight, bottom: 0, left: 0, right: 0, overflowY: "auto", backgroundColor: theme.palette.background.default }}>
                 {tabs[currentTab]?.content}
             </Box>
         </Box>

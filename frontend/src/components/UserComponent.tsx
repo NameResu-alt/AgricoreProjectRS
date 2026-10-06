@@ -125,7 +125,7 @@ export default function UserTab() {
                         variant={"contained"}
                         color={"error"}
                     >
-                        <DeleteIcon></DeleteIcon>
+                        <DeleteIcon sx={{color:"text.primary"}}></DeleteIcon>
                     </Button>
 
                 return (
