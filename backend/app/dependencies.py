@@ -6,10 +6,20 @@ from .database import AsyncSessionLocal
 from .security import decode_access_token, hash_password, verify_password
 from .models import User, UserRole
 from jwt.exceptions import InvalidTokenError
+import boto3
+from typing import Any, Generator, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
 
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
+
+s3_client = boto3.client("s3")
+
+def get_s3() -> Generator[S3Client, Any,None]:
+    return s3_client
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")

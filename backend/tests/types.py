@@ -3,6 +3,12 @@ from app.models import Farm, Equipment, FieldHand, FieldJobStatus
 from enum import Enum
 from pydantic import BaseModel, model_validator
 
+class HealthTestParameters(BaseModel):
+    db_up: bool
+    s3_up: bool
+    expected_status: int
+    outcome: dict[str,bool] | None = None
+
 class ColocationInformation(TypedDict):
     farms: list[Farm]
     equipment: list[Equipment]

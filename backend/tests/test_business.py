@@ -581,7 +581,7 @@ async def test_maintenance_flags(expected_ratio: int, farm_equipment_ratios: lis
         assert json_ratio.maintenance_count == true_ratio.get("maintenance_count")
         assert json_ratio.total == true_ratio.get("maintenance_count") +  true_ratio.get("non_maintenance_count")
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def create_reporting_lines(db_session: AsyncSession) -> Callable[[ReportingLinesSetupV2], Awaitable[dict[int, int]]]:
     async def _create(setup: ReportingLinesSetupV2) -> dict[int, int]:
 

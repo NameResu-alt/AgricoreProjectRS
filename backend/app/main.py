@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from asyncpg import exceptions
-from app.routers import FarmRouter, EquipmentRouter, FieldHandRouter, FieldJobRouter, ServiceReportRouter, BusinessRouter, AuthRouter
+from app.routers import FarmRouter, EquipmentRouter, FieldHandRouter, FieldJobRouter, ServiceReportRouter, BusinessRouter, AuthRouter, HealthRouter
 from app.models import Base
 from app.config import settings
 app = FastAPI(
@@ -30,10 +30,8 @@ app.include_router(FieldJobRouter)
 app.include_router(ServiceReportRouter)
 app.include_router(BusinessRouter)
 app.include_router(AuthRouter)
+app.include_router(HealthRouter)
 
-@app.get("/health")
-async def test_health():
-    return {"status":"OK"}
 
 @app.exception_handler(IntegrityError)
 async def integrity_error_handler(

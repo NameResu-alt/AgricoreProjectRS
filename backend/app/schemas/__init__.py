@@ -5,6 +5,7 @@ from .FieldJob import FieldJobRead, FieldJobCreate, FieldJobUpdate, FieldJobPatc
 from .ServiceReport import ServiceReportRead, ServiceReportCreate, ServiceReportUpdate
 from .Token import Token
 from .User import UserCreate, UserRead
+from .Health import HealthDetailReport
 
 __all__ = [
     "FarmRead", "FarmCreate", "FarmUpdate", "FarmMaintenaceRatio",
@@ -13,5 +14,6 @@ __all__ = [
     "FieldJobRead", "FieldJobCreate", "FieldJobUpdate", "FieldJobPatchStatus"
     "ServiceReportRead", "ServiceReportCreate", "ServiceReportUpdate",
     "Token",
-    "UserCreate", "UserRead"
+    "UserCreate", "UserRead",
+    "HealthDetailReport"
 ]
