@@ -24,8 +24,18 @@ def get_s3() -> Generator[S3Client, Any,None]:
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
+async def check_db_state(db_session: AsyncSession = Depends(get_db)):
+    try:
+        await db_session.execute(select(1))
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database is down, cannot authenticate user"
+        )
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db_session: AsyncSession = Depends(get_db)) -> User:
     try:
+
         access_token = decode_access_token(token)
         username = access_token.get("sub")
 
@@ -57,8 +67,6 @@ def require_role(*role_list: UserRole):
         return user
 
     return check_role
-
-    
 
     
 

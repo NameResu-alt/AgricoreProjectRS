@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status,Depends,HTTPException;
-from app.dependencies import get_db, require_role, get_s3
+from app.dependencies import get_db, require_role, get_s3, check_db_state
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import UserRole, User
@@ -30,9 +30,10 @@ async def db_health_check(dbSession: AsyncSession = Depends(get_db)):
 
 @router.get("/details", response_model=HealthDetailReport)
 async def comprehensive_health_check(
+    _ = Depends(check_db_state),
     dbSession: AsyncSession = Depends(get_db),
     s3_client: S3Client = Depends(get_s3),
-    _: User = Depends(require_role(UserRole.ADMIN))
+    _1: User = Depends(require_role(UserRole.ADMIN))
     ):
     
     s3_healthy = True

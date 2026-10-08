@@ -46,8 +46,8 @@ async def test_health_details_requires_admin(role_name, expected_status, factory
         "parameter",(
             pytest.param(HealthTestParameters(db_up=True, s3_up=True, expected_status=200, outcome={"s3_healthy":True}), id="BothUp"),
             pytest.param(HealthTestParameters(db_up=True, s3_up=False, expected_status=200, outcome={"s3_healthy":False}), id="DB_UP,S3_DOWN"),
-            pytest.param(HealthTestParameters(db_up=False, s3_up=True, expected_status=401), id="DB_DOWN,S3_UP"),
-            pytest.param(HealthTestParameters(db_up=False, s3_up=False, expected_status=401), id="BothDown")
+            pytest.param(HealthTestParameters(db_up=False, s3_up=True, expected_status=503), id="DB_DOWN,S3_UP"),
+            pytest.param(HealthTestParameters(db_up=False, s3_up=False, expected_status=503), id="BothDown")
             ,)
 )
 async def test_health_details(parameter: HealthTestParameters, factory_faulty_client, users):

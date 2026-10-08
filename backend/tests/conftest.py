@@ -1,4 +1,5 @@
 import os
+from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import NullPool
 from app.models import Base, User, UserRole
@@ -58,8 +59,21 @@ def factory_faulty_client(db_session, mocker):
                 mocker.patch.object(
                     db_session,
                     "execute",
-                    side_effect=Exception("Database unavailable")
+                    side_effect = Exception("Database unavailable")
                 )
+                """
+                db_mock = MagicMock()
+
+                async def execute(*args, **kwargs):
+                    print(f"args: {args}, kwargs: {kwargs}")
+                    raise Exception("Database Unavailable")
+
+                db_mock.execute = AsyncMock(side_effect=execute)
+                db_mock.test_if_mock.return_value = True
+
+                print("I should have passed the mock, what gives?")
+                yield db_mock
+                """
             yield db_session
 
         async def override_get_s3():
@@ -76,6 +90,7 @@ def factory_faulty_client(db_session, mocker):
 
         app.dependency_overrides[get_db] = override_get_db
         app.dependency_overrides[get_s3] = override_get_s3
+        print("Overrides occurred")
     
         transport = ASGITransport(app=app)
 
