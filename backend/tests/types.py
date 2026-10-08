@@ -6,7 +6,7 @@ from pydantic import BaseModel, model_validator
 class HealthTestParameters(BaseModel):
     db_up: bool
     s3_up: bool
-    expected_status: int
+    expected_status: int | None = None
     outcome: dict[str,bool] | None = None
 
 class ColocationInformation(TypedDict):

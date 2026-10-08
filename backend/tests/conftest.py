@@ -12,6 +12,7 @@ from httpx import ASGITransport, AsyncClient
 
 import pytest_asyncio
 import pytest
+from contextlib import asynccontextmanager
 
 from .types import HealthTestParameters
 
@@ -50,6 +51,7 @@ async def client(db_session: AsyncSession):
 
 @pytest_asyncio.fixture
 def factory_faulty_client(db_session, mocker):
+    @asynccontextmanager
     async def _make_client(params: HealthTestParameters):
         async def override_get_db():
             if not params.db_up:
@@ -76,11 +78,12 @@ def factory_faulty_client(db_session, mocker):
         app.dependency_overrides[get_s3] = override_get_s3
     
         transport = ASGITransport(app=app)
-    
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
-            yield client
-    
-        app.dependency_overrides.clear()
+
+        try:
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                yield client
+        finally:    
+            app.dependency_overrides.clear()
 
     return _make_client
 
@@ -90,7 +93,7 @@ async def users(db_session: AsyncSession) -> dict[str, User]:
     users = {
         "admin": User(username="admin", hashed_password = unsafe_pw, role = UserRole.ADMIN),
         "field_hand": User(username="field_hand", hashed_password = unsafe_pw, role = UserRole.FIELD_HAND),
-        "auditor": User(username="auditor", hashed_password=unsafe_pw, role = UserRole.ADMIN)
+        "auditor": User(username="auditor", hashed_password=unsafe_pw, role = UserRole.AUDITOR)
     }
 
     db_session.add_all(list(users.values()))

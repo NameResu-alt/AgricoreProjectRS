@@ -51,7 +51,7 @@ def require_role(*role_list: UserRole):
     async def check_role(user: User = Depends(get_current_user)) -> User:
         if user.role not in role_list:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Current user doesn't have access to this resource"
             )
         return user
