@@ -12,7 +12,10 @@ This script creates a .env file in the /backend directory.
 
 # 2. Configure the Backend Environment
 Open /backend/.env and provide the following environment variables:
-- DATABASE_URL: The connection URL to your database. Follows the ostgresql+asyncpg://<username>:<password>@<host>/<db_name> format. 
+- DATABASE_URL: The connection URL to your database. 
+
+Follows the postgresql+asyncpg://<username>:<password>@<host>/<db_name> format. 
+
 - SECRET_KEY: A randomly generated secret key
 - FRONTEND_ORIGIN=The origin URL used by the frontend. Needed for CORS
 
