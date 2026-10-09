@@ -56,9 +56,9 @@ export default function ServiceReportTab() {
                 formData.append("diagnostic_report", diagnostic_report);
             }
 
-            await apiClient.post("/service_reports", formData);
+            const result = await apiClient.post<ServiceReportRead>("/service_reports", formData);
 
-            
+            setData((prev) => [...prev, result.data])
 
             setCurrentSnackbarState({
                 open: true,

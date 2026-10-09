@@ -3,7 +3,6 @@ import type React from "react";
 import { AxiosError } from "axios"
 import type { HTTPException } from "../api/schemas/errors";
 import { useState } from "react";
-import { AddAlertRounded } from "@mui/icons-material";
 type InputType = "text" | "number" | "password" | "file"
 
 type DialogFields<T> = {
