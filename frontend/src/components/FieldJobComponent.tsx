@@ -3,8 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { FieldJobPriority, FieldJobStatus, type FieldJobCreate, type FieldJobRead, type FieldJobUpdate, type FieldJobPatchStatus } from "../api/schemas/field_job";
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import type { GenericGridColumn, SnackbarState } from "./GenericDataGridComponent";
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
+import type { GenericGridColumn, SnackbarState } from "./datagrid/GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./datagrid/GenericDataGridComponent";
 import apiClient from "../api/client";
 import Button from "@mui/material/Button";
 import type { ServiceReportCreate } from "../api/schemas/service_report";
@@ -15,6 +15,9 @@ export default function FieldJobTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
+    const[getSignal, setGetSignal] = useState(0)
+    
+
     const functions = createDefaultFunctions("/field_jobs", setData)
 
     const createDialog: DialogDefinition<FieldJobCreate> = {
@@ -356,6 +359,10 @@ export default function FieldJobTab() {
             setDialogOpen={setDialogOpen}
             snackbarState={snackbarState}
             setSnackbarState={setCurrentSnackbarState}
+
+            setData={setData}
+            getSignal={getSignal}
+            getURL="/field_jobs"
         />
     )
 

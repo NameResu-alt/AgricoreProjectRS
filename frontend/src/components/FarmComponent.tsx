@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import type { FarmCreate, FarmRead, FarmUpdate } from "../api/schemas/farm";
-import type { GenericGridColumn, SnackbarState } from "./GenericDataGridComponent"
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
+import type { GenericGridColumn, SnackbarState } from "./datagrid/GenericDataGridComponent"
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./datagrid/GenericDataGridComponent";
 import {type DialogDefinition} from "./DialogComponent"
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 
@@ -13,7 +13,8 @@ export default function FarmTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
-
+    const[getSignal, setGetSignal] = useState(0)
+    
     const functions = createDefaultFunctions("/farms", setData)
 
     const updateDialog: DialogDefinition<FarmUpdate> = {
@@ -150,6 +151,10 @@ export default function FarmTab() {
                 setDialogOpen={setDialogOpen}
                 snackbarState = {snackbarState}
                 setSnackbarState = {setCurrentSnackbarState}
+
+                setData={setData}
+                getSignal={getSignal}
+                getURL="/farms"
             />
         </>
     )

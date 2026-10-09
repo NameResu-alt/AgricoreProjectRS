@@ -3,8 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { EquipmentStatus, type EquipmentCreate, type EquipmentRead, type EquipmentUpdate } from "../api/schemas/equipment";
 import { type DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import type { GenericGridColumn, SnackbarState} from "./GenericDataGridComponent";
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./GenericDataGridComponent";
+import type { GenericGridColumn, SnackbarState} from "./datagrid/GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./datagrid/GenericDataGridComponent";
 import CircularProgressWithLabel from "./CircularProgressWithLabel";
 
 export default function EquipmentTab(){
@@ -13,7 +13,7 @@ export default function EquipmentTab(){
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
-
+    const[getSignal, setGetSignal] = useState(0)
 
     const functions = createDefaultFunctions("/equipment", setData)
 
@@ -185,6 +185,9 @@ export default function EquipmentTab(){
                 setDialogOpen={setDialogOpen}
                 snackbarState = {snackbarState}
                 setSnackbarState = {setCurrentSnackbarState}
+                setData={setData}
+                getSignal={getSignal}
+                getURL="/equipment"
             />
         </>
     )

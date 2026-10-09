@@ -9,3 +9,4 @@ python-multipart
 SQLAlchemy[asyncio]
 boto3
 botocore[crt]
+mypy_boto3_s3

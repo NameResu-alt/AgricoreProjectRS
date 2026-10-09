@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import type { ServiceReportCreate, ServiceReportRead } from "../api/schemas/service_report";
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
 import apiClient from "../api/client";
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { Button } from "@mui/material";
@@ -14,6 +14,9 @@ export default function ServiceReportTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
+    const[getSignal, setGetSignal] = useState(0)
+    
+
     const functions = createDefaultFunctions("/service_reports", setData)
 
     const createDialog: DialogDefinition<ServiceReportCreate> = {
@@ -227,6 +230,10 @@ export default function ServiceReportTab() {
             setDialogOpen={setDialogOpen}
             snackbarState={snackbarState}
             setSnackbarState={setCurrentSnackbarState}
+
+            setData={setData}
+            getSignal={getSignal}
+            getURL="/service_reports"
         />
     )
 }

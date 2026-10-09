@@ -8,9 +8,7 @@ from .models import User, UserRole
 from jwt.exceptions import InvalidTokenError
 import boto3
 from typing import Any, Generator, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
+from mypy_boto3_s3 import S3Client
 
 async def get_db():
     async with AsyncSessionLocal() as session:

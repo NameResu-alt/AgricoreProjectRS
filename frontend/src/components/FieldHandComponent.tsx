@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { type DialogDefinition } from "./DialogComponent";
 import type { FieldHandCreate, FieldHandRead, FieldHandUpdate } from "../api/schemas/field_hand";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
-import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
+import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
 
 export default function FieldHandTab() {
     const { user } = useAuth()
@@ -11,6 +11,8 @@ export default function FieldHandTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
+    const[getSignal, setGetSignal] = useState(0)
+    
     const functions = createDefaultFunctions("/field_hands", setData)
 
     const createDialog: DialogDefinition<FieldHandCreate> = {
@@ -135,6 +137,10 @@ export default function FieldHandTab() {
                 setDialogOpen={setDialogOpen}
                 snackbarState={snackbarState}
                 setSnackbarState={setCurrentSnackbarState}
+
+                setData={setData}
+                getSignal={getSignal}
+                getURL="/field_hands"
             />
         </>
     )

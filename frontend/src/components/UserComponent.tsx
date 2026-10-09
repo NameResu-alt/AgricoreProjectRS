@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { UserRole, type UserCreate, type UserRead } from "../api/schemas/auth";
 import type { DialogDefinition } from "./DialogComponent";
 import apiClient from "../api/client";
-import { GenericTabBody, type GenericGridColumn, type SnackbarState } from "./GenericDataGridComponent";
+import { GenericTabBody, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Button } from "@mui/material";
 export default function UserTab() {
@@ -12,6 +12,7 @@ export default function UserTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
+    const[getSignal, setGetSignal] = useState(0)
 
     async function getUsers() {
         const response = await apiClient.get<UserRead[]>("/auth")
@@ -205,6 +206,10 @@ export default function UserTab() {
                 setCurrentDialogDefinition={setCurrentDialogDefinition}
                 snackbarState={snackbarState}
                 setSnackbarState={setCurrentSnackbarState}
+
+                setData={setData}
+                getSignal={getSignal}
+                getURL="/auth"
             />
         </>
     )

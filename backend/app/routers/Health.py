@@ -6,9 +6,7 @@ from app.models import UserRole, User
 from app.schemas import HealthDetailReport
 from typing import TYPE_CHECKING
 from app.config import settings
-
-if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
+from mypy_boto3_s3 import S3Client
 
 router = APIRouter(
     prefix="/health",

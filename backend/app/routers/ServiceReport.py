@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user, require_role, get_s3
 from app.models import ServiceReport, User, UserRole
 from app.schemas import ServiceReportRead, ServiceReportUpdate, ServiceReportCreate
-from uuid import uuid7
+from uuid import uuid4
 
 from app.config import settings
 
@@ -45,7 +45,7 @@ async def create_service_report(
     new_service_report = ServiceReport(**report_data.model_dump())
 
     print("Got to this point")
-    file_location = f"{report_data.file_url}/{report_data.field_job_id}/{uuid7()}-{diagnostic_report.filename}"
+    file_location = f"{report_data.file_url}/{report_data.field_job_id}/{uuid4()}-{diagnostic_report.filename}"
     new_service_report.file_url = f"s3://rs-agricore-uploads/{file_location}"    
 
     s3_client.upload_fileobj(
