@@ -20,7 +20,8 @@ app.add_middleware(
     allow_origins=[FRONTEND_ORIGIN, "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"]
 )
 
 app.include_router(FarmRouter)
@@ -40,7 +41,18 @@ async def integrity_error_handler(
 ) -> JSONResponse:
     cause = exc.orig.__cause__
 
+
+
     if isinstance(cause, exceptions.UniqueViolationError):
+        print("Unique constraint violation!")
+        print(f"Error: {cause}")
+        print(f"SQLSTATE: {cause.sqlstate}")
+        print(f"Message: {cause.message}")
+        print(f"Detail: {cause.detail}")
+        print(f"Schema: {cause.schema_name}")
+        print(f"Table: {cause.table_name}")
+        print(f"Constraint: {cause.constraint_name}")
+        
         return JSONResponse(
             status_code=409,
             content={"detail": "A resource with this value already exists."},

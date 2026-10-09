@@ -1,9 +1,10 @@
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem,  TextField, useTheme } from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField, useTheme } from "@mui/material";
 import type React from "react";
 import { AxiosError } from "axios"
 import type { HTTPException } from "../api/schemas/errors";
 import { useState } from "react";
-type InputType = "text" | "number" | "password"
+import { AddAlertRounded } from "@mui/icons-material";
+type InputType = "text" | "number" | "password" | "file"
 
 type DialogFields<T> = {
     [K in keyof T]: {
@@ -44,32 +45,64 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
 
 
     const preparedFields: React.JSX.Element[] = definition.fields.map((field) => {
-        return <TextField
-            required={field.optional == true}
-            error={errorField == String(field.field)}
-            key={String(field.field)}
-            name={String(field.field)}
-            label={field.headerName}
-            select={field.options !== undefined}
-            defaultValue={definition.startingValue ? definition.startingValue.value![field.field] : undefined}
-            type={field.type}
-            slotProps={{
-                input: {
-                    readOnly: field.editable === false,
-                },
-            }}
 
-            margin={"dense"}
-            variant={"outlined"}
-        >
-            {
-                field.options?.map((opt) =>
-                    <MenuItem key={String(opt)} value={String(opt)}>
-                        {String(opt)}
-                    </MenuItem>
-                )
+        if (field.type == "file") {
+            return (
+                <TextField
+                    key={String(field.field)}
+                    type="file"
+                    name={field.field}
+                    label={field.headerName}
+                    slotProps={{
+                        htmlInput: {
+                            accept: ".pdf,.docx,.txt",
+                            multiple: false
+                        },
+                        inputLabel: {
+                            shrink: true
+                        }
+                    }}
+
+                    fullWidth
+                />)
+        }
+        else {
+
+            let defaultValue: any = undefined
+            if (definition.startingValue !== undefined){
+                defaultValue = definition.startingValue.value![field.field]
             }
-        </TextField>
+            else if(field.options !== undefined){
+                defaultValue = field.options[0]
+            }
+
+            return (<TextField
+                required={field.optional == true}
+                error={errorField == String(field.field)}
+                key={String(field.field)}
+                name={String(field.field)}
+                label={field.headerName}
+                select={field.options !== undefined}
+                defaultValue={defaultValue}
+                type={field.type}
+                slotProps={{
+                    input: {
+                        readOnly: field.editable === false,
+                    },
+                }}
+
+                margin={"dense"}
+                variant={"outlined"}
+            >
+                {
+                    field.options?.map((opt) =>
+                        <MenuItem key={String(opt)} value={String(opt)}>
+                            {String(opt)}
+                        </MenuItem>
+                    )
+                }
+            </TextField>)
+        }
     })
 
     /*
@@ -88,7 +121,7 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
 
     return (
         <Dialog
-            open={dialogOpen}            
+            open={dialogOpen}
             onClose={() => {
                 definition.onDialogClose()
                 setErrorState(false)
@@ -106,6 +139,10 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
 
                         const data = Object.fromEntries(
                             [...formData.entries()].filter(([_, value]) => {
+                                if (value instanceof File) {
+                                    return value.size > 0;
+                                }
+                                
                                 return typeof value !== "string" || value.trim() !== "";
                             })
                         );
@@ -141,8 +178,8 @@ export function GenericDialog({ definition, dialogOpen }: { definition: DialogDe
                         alignItems: "stretch",
                         width: "500px",
                         maxWidth: "90vw",
-                        overlay:"none",
-                        backgroundColor:theme.palette.background.paper,
+                        overlay: "none",
+                        backgroundColor: theme.palette.background.paper,
                         border: `2px solid ${theme.palette.divider}`,
                     }
                 }

@@ -11,7 +11,7 @@ class ServiceReport(Base):
     __tablename__="service_reports"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    file_url: Mapped[str] = mapped_column(String(200))
+    file_url: Mapped[str] = mapped_column(String(200), unique=True)
     notes: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     field_job_id: Mapped[int] = mapped_column(Integer, ForeignKey("field_jobs.id"))

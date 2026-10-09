@@ -5,6 +5,7 @@ from sqlalchemy import select
 from app.models import UserRole, User
 from app.schemas import HealthDetailReport
 from typing import TYPE_CHECKING
+from app.config import settings
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -48,7 +49,7 @@ async def comprehensive_health_check(
         print(f"An error occurred for db: {e}")
     """
     try:
-        s3_client.head_bucket(Bucket="rs-agricore-uploads")
+        s3_client.head_bucket(Bucket=settings.s3_bucket_name)
     except Exception as e:
         s3_healthy = False
 

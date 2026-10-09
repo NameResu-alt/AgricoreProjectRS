@@ -206,10 +206,26 @@ export default function FieldJobTab() {
                 headerName: "Field Job ID",
                 type: "number",
                 editable: false
+            },
+            {
+                field: "diagnostic_report",
+                headerName: "",
+                type: "file"
             }
         ],
         submitAction: async (value, id) => {
-            await apiClient.post("/service_reports", value)
+            const formData = new FormData();
+
+            const { diagnostic_report, ...payload } = value;
+
+            formData.append("payload", JSON.stringify(payload));
+
+            if (diagnostic_report instanceof File) {
+                formData.append("diagnostic_report", diagnostic_report);
+            }
+
+            await apiClient.post("/service_reports", formData);
+
             setCurrentSnackbarState({
                 open: true,
                 options: {

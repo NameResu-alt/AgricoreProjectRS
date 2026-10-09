@@ -23,7 +23,7 @@ interface ServiceReportRead extends ServiceReportBase{
 }
 
 interface ServiceReportCreate extends ServiceReportBase{
-
+    diagnostic_report: File
 }
 
 interface ServiceReportUpdate extends ServiceReportBase{

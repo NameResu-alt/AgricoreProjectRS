@@ -9,7 +9,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 export type GenericGridColumn<T extends GridValidRowModel> = {
-    field: keyof T | "delete" | "update" | "patch" | "create";
+    field: keyof T | "delete" | "update" | "patch" | "create" | "download";
     headerName: string;
     type?: "string" | "number" | "actions" | "dateTime";
     width?: number;

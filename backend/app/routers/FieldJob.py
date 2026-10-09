@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, status, HTTPException
 
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,3 +84,12 @@ async def patch_field_job_status(
     await db_session.refresh(current_field_job)
 
     return current_field_job
+
+@router.post("/test_file", status_code=200)
+async def test_file_works(diagnostic_report: UploadFile):
+    contents = await diagnostic_report.read()
+    text = contents.decode("utf-8")
+
+    print(text)
+
+    return {"contents": text}

@@ -41,3 +41,38 @@ INSERT INTO service_reports (id, file_url, notes, field_job_id) VALUES
     (3,'S3URL3','Notes3', 3)
     ON CONFLICT
     DO NOTHING;
+
+--Note: Due to manually inserting ids, Postgre's internal id iterator is out of sync
+--This means that the next time that you attempt to insert for however many x pre-seeded rows are in that table
+--You are going to get a 409 since the db is going to attemp to use those old values.
+--To fix this, have to fast forward the id
+
+SELECT setval(
+    pg_get_serial_sequence('farms', 'id'),
+    COALESCE(MAX(id), 1),
+    MAX(id) IS NOT NULL
+) FROM farms;
+
+SELECT setval(
+    pg_get_serial_sequence('equipment', 'id'),
+    COALESCE(MAX(id), 1),
+    MAX(id) IS NOT NULL
+) FROM equipment;
+
+SELECT setval(
+    pg_get_serial_sequence('field_hands', 'id'),
+    COALESCE(MAX(id), 1),
+    MAX(id) IS NOT NULL
+) FROM field_hands;
+
+SELECT setval(
+    pg_get_serial_sequence('field_jobs', 'id'),
+    COALESCE(MAX(id), 1),
+    MAX(id) IS NOT NULL
+) FROM field_jobs;
+
+SELECT setval(
+    pg_get_serial_sequence('service_reports', 'id'),
+    COALESCE(MAX(id), 1),
+    MAX(id) IS NOT NULL
+) FROM service_reports;
