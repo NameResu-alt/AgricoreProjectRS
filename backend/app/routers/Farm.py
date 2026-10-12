@@ -1,22 +1,39 @@
 from app.schemas import FarmRead, FarmUpdate, FarmCreate
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Farm, User, UserRole
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import data_query_for, get_db, get_current_user, require_role
+from app.schemas.Envelope import DataQuery, DataEnvelope
 
 router = APIRouter(
     prefix="/farms",
     tags=["farms"]
 )
 
-@router.get("", response_model=list[FarmRead])
+@router.get("", response_model=DataEnvelope[FarmRead])
 async def get_farms(db_session: AsyncSession = Depends(get_db),
+                          searchQueries: DataQuery = Depends(data_query_for(Farm, FarmRead)),
                     _: User = Depends(get_current_user)) -> list[Farm]:
-    stmt = select(Farm)
-    
-    result = await db_session.execute(stmt)
-    return list(result.scalars().all())
+    stmt = select(Farm).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
+
+    count_stmt = select(func.count()).select_from(
+        stmt.order_by(None).subquery()
+    )
+
+    total_count = await db_session.scalar(count_stmt)
+
+    result = await db_session.execute(
+        stmt
+        .offset(searchQueries.page_size * searchQueries.page)
+        .limit(searchQueries.page_size)
+                                     )    
+    items = list(result.scalars().all())
+
+    return DataEnvelope[FarmRead](
+        total=total_count,
+        data=items
+    )
 
 @router.delete("/{farm_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_farm(farm_id: int,

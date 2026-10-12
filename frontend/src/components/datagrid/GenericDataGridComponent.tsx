@@ -1,4 +1,4 @@
-import { DataGrid, type GridFilterModel, GridFooterContainer, GridPagination, type GridColDef, type GridTreeNodeWithRender, type GridValidRowModel } from "@mui/x-data-grid";
+import { DataGrid, GridFooterContainer, GridPagination, type GridColDef, type GridTreeNodeWithRender, type GridValidRowModel } from "@mui/x-data-grid";
 import type { GridRenderCellParams } from "@mui/x-data-grid/models";
 import type React from "react";
 import { GenericDialog, type DialogDefinition } from "../DialogComponent";
@@ -8,13 +8,14 @@ import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useEffect, useState } from "react";
-import { type GridSortModel } from "@mui/x-data-grid";
 import apiClient from "../../api/client";
 
 import { type GridSlots } from "@mui/x-data-grid";
 import CustomColumnMenu from "./CustomColumnMenu";
-import type { CustomFilterModel, CustomSortingModel, CustomColumnMenuProps } from "./CustomColumnMenu";
-import CustomFilterMenu, { type FilterStatus } from "./CustomFilterMenu";
+import type { CustomSortingModel } from "./CustomColumnMenu";
+import type { CustomFilterModel } from "./CustomFilterMenuV2";
+import CustomFilterMenuV2, { date_operators, numeric_operators, string_operators } from "./CustomFilterMenuV2";
+import type { DataEnvelope } from "../../api/schemas/dataEnvelope";
 
 export type GenericGridColumn<T extends GridValidRowModel> = {
     field: keyof T | "delete" | "update" | "patch" | "create" | "download" | "header";
@@ -108,7 +109,7 @@ export function GenericDeleteButton(successSnackbar: (id: number) => GenericSnac
     }
 }
 
-export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState, setData, getSignal, getURL }: { userRole: UserRole | undefined, data: T[], gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, setData: React.Dispatch<React.SetStateAction<T[]>>, getSignal: number, getURL: string }) {
+export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState, setData, getSignal, getURL }: { userRole: UserRole | undefined, data: DataEnvelope<T>, gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getSignal: number, getURL: string }) {
     return (
         <>
             <Box sx={{ height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
@@ -158,15 +159,65 @@ function CustomFooter() {
 }
 
 //Won't own the data anymore, just make the datagrid!.
-export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData, columns, setData, getSignal, getURL }: { rowData: T[], columns: GenericGridColumn<T>[], setData: React.Dispatch<React.SetStateAction<T[]>>, getSignal: number, getURL: string }) {
+export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData, columns, setData, getSignal, getURL }: { rowData: DataEnvelope<T>, columns: GenericGridColumn<T>[], setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getSignal: number, getURL: string }) {
+
+    function notExtraField(field: string) {
+        return !(["delete", "update", "patch", "create", "download", "header"].includes(field))
+    }
+
+    const fieldNames: { fieldName: string; headerName: string }[] = columns
+        .map((col) => ({
+            fieldName: String(col.field),
+            headerName: String(col.headerName)
+        }))
+        .filter(({ fieldName }) => notExtraField(fieldName));
+
+    let fieldFilterOptions: Record<string, { options: string[], type: string }> = {}
+
+    for (const col of columns) {
+        const outcome = fieldNames.find((n) => String(col.field) == n.fieldName)
+        if (outcome == undefined) {
+            continue;
+        }
+
+
+        let correctOperators: string[] = []
+        switch (String(col.type)) {
+            case "number":
+                correctOperators = [...numeric_operators]
+                break;
+            case "dateTime":
+                correctOperators = [...date_operators]
+                break;
+            case "string":
+            default:
+                correctOperators = [...string_operators]
+                break;
+        }
+
+        const type = String(col.type ?? "string");
+
+        fieldFilterOptions[String(col.field)] = {
+            options: correctOperators,
+            type: type
+        }
+
+    }
+
 
     const [sortModel, setSortModel] = useState<CustomSortingModel>({})
-    const [filterModel, setFilterModel] = useState<CustomFilterModel>({})
+    const [filterModel, setFilterModel] = useState<CustomFilterModel>({
+        filterMenuParentElement: null,
+        filters: [],
+        fieldNames: fieldNames,
+        fieldFilterOptions: fieldFilterOptions,
+        conditionalMode: "and"
+    })
+
     const [paginationModel, setPaginationModel] = useState({
         page: 0,
         pageSize: 5,
     })
-    const [filterStatus, setFilterStatus] = useState<FilterStatus>({open:false, parent:null})
 
     const prepedColumns: GridColDef<T>[] = columns.map((col) => ({
         field: String(col.field),
@@ -188,43 +239,51 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
         }
     }))
 
-    async function powerGet(get_url: string, setData: React.Dispatch<React.SetStateAction<T[]>>) {
+    async function powerGet(get_url: string, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>) {
         //For every pagination, sorting, and filtering, I need to add a param for it.
         //Keep in mind, the shape of them. I don't think I can pass an object wholesale as a parameter?
         //Maybe if I passed in the parameter as a JSON? 
-        let total_params: Record<string, string> = {}
-        total_params["page"] = String(paginationModel.page)
-        total_params["pageSize"] = String(paginationModel.pageSize)
+        const params = new URLSearchParams()
+        params.append("page", String(paginationModel.page))
+        params.append("page_size", String(paginationModel.pageSize))
+        params.append("filter_mode", filterModel.conditionalMode)
 
         for (const [field, sortDirection] of Object.entries(sortModel)) {
             if (sortDirection == undefined) continue
-
-            total_params[`sort${field.slice(0, 1).toUpperCase() + field.slice(1, field.length)}`] = sortDirection;
+            params.append(
+                "sort",
+                JSON.stringify({
+                    field: field,
+                    direction: sortDirection
+                })
+            )
         }
 
-        for (const [field, filters] of Object.entries(filterModel)) {
-            let pascalFieldName = field.slice(0, 1).toUpperCase() + field.slice(1)
+        
 
-            let totalFilter = ""
-            for (const filter of filters) {
-                totalFilter += filter.operator + "," + filter.value + "|"
-            }
-
-            if (totalFilter.length > 0 && totalFilter[totalFilter.length - 1] == '|')
-                totalFilter = totalFilter.slice(0, totalFilter.length)
-            total_params[`filter${pascalFieldName}`] = totalFilter
+        for (const filter of filterModel.filters) {
+            if(filter.value == undefined || filter.value == "")continue
+            params.append(
+                "filter",
+                JSON.stringify({
+                    field: filter.field,
+                    operator: filter.currentOperator,
+                    value: filter.value
+                })
+            )
         }
 
-        let response = await apiClient.get<T[]>(get_url, {
-            params: total_params
+        let response = await apiClient.get<DataEnvelope<T>>(get_url, {
+            params: params
         })
+        alert(`Did a get: ${JSON.stringify(response.data)}`)
         setData(response.data)
     }
 
     useEffect(() => {
         powerGet(getURL, setData)
     }
-        , [getSignal, sortModel, filterModel, paginationModel])
+        , [sortModel, filterModel.filters,filterModel.conditionalMode, paginationModel])
 
     return (
         <>
@@ -233,15 +292,16 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
                     footer: CustomFooter,
                     columnMenu: CustomColumnMenu as GridSlots['columnMenu']
                 }}
+
                 slotProps={{
                     columnMenu: {
                         "parentFilterModel": filterModel,
+                        "setFilterModel": setFilterModel,
                         "parentSortingModel": sortModel,
-                        "setParentFilterModel": setFilterModel,
-                        "setParentSortingModel": setSortModel,
-                        "setFilterStatus": setFilterStatus
+                        "setParentSortingModel": setSortModel
                     }
                 }}
+
                 onPaginationModelChange={
                     (paginationModel) => {
                         setPaginationModel({
@@ -251,15 +311,20 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
                     }
                 }
 
-                paginationMode={"client"}
-                sortingMode={"client"}
-                filterMode={"client"}
+                sortingMode={"server"}
+                filterMode={"server"}
                 columns={prepedColumns}
-                rows={rowData}
+                rows={rowData.data}
                 sx={{ p: 2, flex: 1 }}
             >
             </DataGrid>
-             <CustomFilterMenu columns={prepedColumns} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />
+
+            {
+                filterModel.filterMenuParentElement !== null &&
+                <CustomFilterMenuV2 filterModel={filterModel} setFilterModel={setFilterModel} />
+            }
+
         </>
     )
 }
+//<CustomFilterMenu columns={columns} filterStatus={filterStatus} setFilterStatus={setFilterStatus} />

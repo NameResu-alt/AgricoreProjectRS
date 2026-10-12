@@ -5,11 +5,15 @@ import type { GenericGridColumn, SnackbarState } from "./datagrid/GenericDataGri
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./datagrid/GenericDataGridComponent";
 import {type DialogDefinition} from "./DialogComponent"
 import createDefaultFunctions from "../api/genericCRUDFunctions";
+import type { DataEnvelope } from "../api/schemas/dataEnvelope";
 
 export default function FarmTab() {
     const { user } = useAuth()
 
-    const [data, setData] = useState<FarmRead[]>([])
+    const [data, setData] = useState<DataEnvelope<FarmRead>>({
+        total: 0,
+        data: []
+    })
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
@@ -134,10 +138,6 @@ export default function FarmTab() {
             (id, _)=>({message:`Failed to delete Farm ${id}`, severity:"error", duration: 3000}),
             setCurrentSnackbarState,functions.delete))
     }
-
-    useEffect(()=>{
-        functions.get()
-    },[])
 
     return (
         <>

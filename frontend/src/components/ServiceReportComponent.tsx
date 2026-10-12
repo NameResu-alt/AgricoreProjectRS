@@ -7,10 +7,11 @@ import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericG
 import apiClient from "../api/client";
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { Button } from "@mui/material";
+import type { DataEnvelope } from "../api/schemas/dataEnvelope";
 
 export default function ServiceReportTab() {
     const { user } = useAuth()
-    const [data, setData] = useState<ServiceReportRead[]>([])
+    const [data, setData] = useState<DataEnvelope<ServiceReportRead>>([])
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
@@ -60,8 +61,8 @@ export default function ServiceReportTab() {
             }
 
             const result = await apiClient.post<ServiceReportRead>("/service_reports", formData);
-
-            setData((prev) => [...prev, result.data])
+            await functions.get()
+            //setData((prev) => [...prev, result.data])
 
             setCurrentSnackbarState({
                 open: true,
@@ -211,12 +212,6 @@ export default function ServiceReportTab() {
             setCurrentSnackbarState,
             functions.delete))
     }
-
-    useEffect(() => {
-        functions.get()
-    }
-        , [])
-
 
     return (
         <GenericTabBody

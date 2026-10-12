@@ -4,10 +4,14 @@ import { type DialogDefinition } from "./DialogComponent";
 import type { FieldHandCreate, FieldHandRead, FieldHandUpdate } from "../api/schemas/field_hand";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
+import type { DataEnvelope } from "../api/schemas/dataEnvelope";
 
 export default function FieldHandTab() {
     const { user } = useAuth()
-    const [data, setData] = useState<FieldHandRead[]>([])
+    const [data, setData] = useState<DataEnvelope<FieldHandRead>>({
+        total: 0,
+        data: []
+    })
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
@@ -118,12 +122,6 @@ export default function FieldHandTab() {
             setCurrentSnackbarState, 
             functions.delete))
     }
-
-
-
-    useEffect(() => {
-        functions.get()
-    }, [])
 
     return (
         <>

@@ -6,16 +6,20 @@ import apiClient from "../api/client";
 import { GenericTabBody, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Button } from "@mui/material";
+import type { DataEnvelope } from "../api/schemas/dataEnvelope";
 export default function UserTab() {
     const { user } = useAuth()
-    const [data, setData] = useState<UserRead[]>([])
+    const [data, setData] = useState<DataEnvelope<UserRead>>({
+        total: 0,
+        data: []
+    })
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
     const[getSignal, setGetSignal] = useState(0)
 
     async function getUsers() {
-        const response = await apiClient.get<UserRead[]>("/auth")
+        const response = await apiClient.get<DataEnvelope<UserRead>>("/auth")
         setData(response.data)
     }
 
@@ -187,11 +191,11 @@ export default function UserTab() {
     }
      * 
     */
-
+    /*
     useEffect(() => {
         getUsers()
     }, [])
-
+    */
 
     return (
         <>

@@ -3,27 +3,45 @@ from io import BytesIO
 from fastapi import Depends, APIRouter, File, Form, HTTPException, status, UploadFile
 
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user, require_role, get_s3
+from app.dependencies import data_query_for, get_db, get_current_user, require_role, get_s3
 from app.models import ServiceReport, User, UserRole
 from app.schemas import ServiceReportRead, ServiceReportUpdate, ServiceReportCreate
 from uuid import uuid4
 
 from app.config import settings
+from app.schemas import DataQuery, DataEnvelope
 
 router = APIRouter(
     prefix="/service_reports",
     tags=["service_reports"]
 )
 
-@router.get("",response_model=list[ServiceReportRead])
+@router.get("",response_model=DataEnvelope[ServiceReportRead])
 async def get_service_reports(db_session: AsyncSession = Depends(get_db),
+                              searchQueries: DataQuery = Depends(data_query_for(ServiceReport, ServiceReportRead)),
                               _:User = Depends(get_current_user)):
-    result = await db_session.execute(select(ServiceReport))
+    stmt = select(ServiceReport).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
+
+    count_stmt = select(func.count()).select_from(
+        stmt.order_by(None).subquery()
+    )
+
+    result = await db_session.execute(
+        stmt
+        .offset(searchQueries.page_size * searchQueries.page)
+        .limit(searchQueries.page_size)
+    )
+
+    total_count = await db_session.scalar(count_stmt)
+    items = list(result.scalars().all())
     
-    return list(result.scalars().all())
+    return DataEnvelope[ServiceReportRead](
+        total=total_count,
+        data=items
+    )
 
 @router.delete("/{service_report_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_service_report(service_report_id: int,

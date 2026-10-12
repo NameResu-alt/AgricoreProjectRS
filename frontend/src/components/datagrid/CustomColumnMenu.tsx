@@ -1,13 +1,7 @@
-import { Box, Button, ButtonGroup, Divider, Grid, Stack, Typography } from '@mui/material';
+import { Button, ButtonGroup, Divider, Grid, Stack, Typography } from '@mui/material';
 import {
-    GridColumnMenu,
     GridColumnMenuContainer,
     type GridColumnMenuProps,
-    GridColumnMenuFilterItem,
-    GridColumnMenuSortItem,
-    useGridApiRef,
-    DataGrid,
-    type GridSlots,
     useGridApiContext,
 } from '@mui/x-data-grid';
 
@@ -15,29 +9,21 @@ import FilterListAltIcon from '@mui/icons-material/FilterListAlt';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import type { Theme } from '@mui/material/styles';
-import React, { useState } from 'react';
-import CustomFilterMenu, { type FilterStatus } from './CustomFilterMenu';
+import React from 'react';
+import { date_operators, numeric_operators, string_operators, type CustomFilterModel } from './CustomFilterMenuV2';
 
-interface FilterInformation {
-    operator: string,
-    value: string
-}
 
-export type CustomFilterModel = Record<string, FilterInformation[]>
 export type CustomSortingModel = Record<string, "asc" | "desc" | undefined>
 export type CustomColumnMenuProps = GridColumnMenuProps & {
-    parentFilterModel: CustomFilterModel;
+    parentFilterModel: CustomFilterModel
+    setFilterModel: React.Dispatch<React.SetStateAction<CustomFilterModel>>
     parentSortingModel: CustomSortingModel;
-    setParentFilterModel: React.Dispatch<
-        React.SetStateAction<CustomFilterModel>
-    >;
     setParentSortingModel: React.Dispatch<React.SetStateAction<CustomSortingModel>>
-    setFilterStatus: React.Dispatch<React.SetStateAction<FilterStatus>>
 };
 
 
 
-export default function CustomColumnMenu({parentFilterModel, parentSortingModel, setParentFilterModel, setParentSortingModel, setFilterStatus, ...props }: CustomColumnMenuProps) {
+export default function CustomColumnMenu({ parentFilterModel, parentSortingModel, setParentSortingModel, setFilterModel, ...props }: CustomColumnMenuProps) {
     const { hideMenu, colDef, color, ...other } = props;
 
     const apiRef = useGridApiContext();
@@ -50,43 +36,14 @@ export default function CustomColumnMenu({parentFilterModel, parentSortingModel,
         })
     }
 
-    function deleteCurrentFilter(filterIndex: number) {
-        setParentFilterModel((prev) => {
-            let old_list = prev[colDef.field] ?? []
-            let new_list = old_list.filter((_, index) => index !== filterIndex)
-                .map((val) => ({ ...val }))
+    let ascButton = <MenuButton icon={<ArrowUpwardIcon />} text={"Sort by ASC"} operation={() => updateSortDirection("asc")} />
+    let descButton = <MenuButton icon={<ArrowDownwardIcon />} text={"Sort by DESC"} operation={() => updateSortDirection("desc")} />
+    let unsetButton = <MenuButton icon={<></>} text={"Unset"} operation={() => updateSortDirection(undefined)} />
 
-            return { ...prev, [colDef.field]: new_list };
-        })
-    }
-
-    function updateCurrentFilter(filter: FilterInformation, filterIndex: number) {
-        setParentFilterModel((prev) => {
-            const list = prev[colDef.field] ?? [];
-
-            const newList = list.map((item, index) =>
-                index === filterIndex ? filter : { ...item }
-            );
-
-            if (filterIndex >= newList.length) {
-                newList.push(filter);
-            }
-
-            return {
-                ...prev,
-                [colDef.field]: newList,
-            };
-        })
-    }
-    
-    let ascButton = <MenuButton icon={<ArrowUpwardIcon/>} text={"Sort by ASC"} operation={()=>updateSortDirection("asc")}/>
-    let descButton = <MenuButton icon={<ArrowDownwardIcon/>} text={"Sort by DESC"} operation={()=>updateSortDirection("desc")}/>
-    let unsetButton = <MenuButton icon={<></>} text={"Unset"} operation={()=>updateSortDirection(undefined)}/>
-    
     let sortingButtons: React.ReactElement[] = []
     const currentSort = parentSortingModel[colDef.field]
 
-    switch(currentSort){
+    switch (currentSort) {
         case "asc":
             sortingButtons.push(descButton)
             sortingButtons.push(unsetButton)
@@ -95,7 +52,7 @@ export default function CustomColumnMenu({parentFilterModel, parentSortingModel,
             sortingButtons.push(ascButton)
             sortingButtons.push(unsetButton)
             break;
-        default: 
+        default:
             sortingButtons.push(ascButton)
             sortingButtons.push(descButton)
             break;
@@ -119,7 +76,7 @@ export default function CustomColumnMenu({parentFilterModel, parentSortingModel,
 
     interface MenuButtonProps {
         icon: React.ReactElement;
-        operation: () => void;
+        operation: (event: React.SyntheticEvent<Element, Event>) => void;
         text: string;
     }
 
@@ -163,7 +120,7 @@ export default function CustomColumnMenu({parentFilterModel, parentSortingModel,
 
     return (
         <GridColumnMenuContainer
-            hideMenu={hideMenu}
+            hideMenu={(event) => hideMenu(event)}
             colDef={colDef}
             {...other}
         >
@@ -176,10 +133,44 @@ export default function CustomColumnMenu({parentFilterModel, parentSortingModel,
 
                 <Divider />
 
-                <MenuButton icon={<FilterListAltIcon/>} text={"Filter"} operation={()=>setFilterStatus({open:true, parent: headerElement!})}/>
+                <MenuButton icon={<FilterListAltIcon />} text={"Filter"} operation={(event) => {
+                    hideMenu(event)
+                    let foundPrevious = false
+                    for(let filter of parentFilterModel.filters){
+                        if(filter.field === String(colDef.field)){
+                            foundPrevious = true
+                            break
+                        }
+                    }
+                    let currentFilters = parentFilterModel.filters.map((f)=>({...f}))
+
+                    if(!foundPrevious){
+
+                        let correctOperators = parentFilterModel.fieldFilterOptions[colDef.field]
+                        currentFilters.push({
+                            id: crypto.randomUUID(),
+                            field: colDef.field,
+                            operators: correctOperators.options,
+                            currentOperator: correctOperators.options[0]
+                        })
+                    }
+
+                    setFilterModel((prev)=>(
+                        {
+                            filterMenuParentElement: headerElement!,
+                            filters:currentFilters,
+                            fieldNames: prev.fieldNames,
+                            fieldFilterOptions: prev.fieldFilterOptions,
+                            conditionalMode: prev.conditionalMode
+                        }
+                    ))
+                    //setFilterStatus({ open: true, parent: headerElement!, initialColumn: colDef.field })
+                }
+                }
+                />
 
             </Stack>
-            
+
         </GridColumnMenuContainer>
     );
 }

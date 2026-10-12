@@ -1,5 +1,6 @@
 import apiClient from "./client";
 import type React from "react";
+import type { DataEnvelope } from "./schemas/dataEnvelope";
 
 interface Functions {
     get: () => Promise<void>
@@ -9,7 +10,7 @@ interface Functions {
 }
 
 //const setData: React.Dispatch<React.SetStateAction<FarmRead[]>>
-export default function createDefaultFunctions<T extends { id: number }>(baseURL: string, setData: React.Dispatch<React.SetStateAction<T[]>>): Functions {
+export default function createDefaultFunctions<T>(baseURL: string, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>): Functions {
 
     const get = async () => {
         const result = await apiClient.get(baseURL)
@@ -19,11 +20,15 @@ export default function createDefaultFunctions<T extends { id: number }>(baseURL
     return {
         get: get,
         post: async (data: any) => {
-            const result = await apiClient.post<T>(baseURL, data)
-            setData((prev) => [...prev, result.data])
+            await apiClient.post(baseURL, data)
+            await get()
+
+            //setData((prev) => [...prev, result.data])
         },
         put: async (data: any, id: number) => {
-            const result = await apiClient.put(`${baseURL}/${id}`, data)
+            await apiClient.put(`${baseURL}/${id}`, data)
+            await get()
+            /*
             setData((prev) => {
                 return prev.map((row) => {
                     if (row.id != result.data.id) {
@@ -33,6 +38,7 @@ export default function createDefaultFunctions<T extends { id: number }>(baseURL
                     return result.data;
                 });
             })
+            */
         },
         delete: async (id: number) => {
             await apiClient.delete(`${baseURL}/${id}`)

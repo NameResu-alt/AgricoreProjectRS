@@ -1,0 +1,219 @@
+import { useGridApiContext, type GridColDef, type GridValidRowModel } from "@mui/x-data-grid";
+import Popper from '@mui/material/Popper';
+import { Box, Button, Divider, Grid, MenuItem, Paper, Popover, Stack, TextField } from "@mui/material";
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import { Add, Preview } from "@mui/icons-material";
+import type { GenericGridColumn } from "./GenericDataGridComponent";
+import type { GridColType } from "@mui/x-data-grid";
+import { useEffect, useRef, useState } from "react";
+
+
+export type ActiveFilter = {
+    id: string,
+    field: string,
+    options: string[],
+    value?: any
+}
+
+export type CustomFilterModel = {
+    filterMenuParentElement: React.ReactElement | null
+    filters: ActiveFilter[]
+}
+
+
+export interface FilterStatus {
+    open: boolean,
+    parent: HTMLElement | null
+    initialColumn: string | null
+}
+
+interface ActiveFilter {
+    id: string
+    column: string
+    operator: string
+    value: string
+}
+
+interface FieldFilterOptions {
+    headerName: string
+    operators: string[]
+    type: string
+}
+
+function FilterRow<T extends GridValidRowModel>({ columns, filter, onChange }: { columns: Partial<Record<keyof T, FieldFilterOptions>>, filter: ActiveFilter, onChange: (filter: ActiveFilter) => void }) {
+    let padding = 1
+    // Keep the selected operator valid when the column changes.
+    const operators = columns[filter.column as keyof T]?.operators ?? [];
+
+    return (
+        <Stack direction="row" sx={{ width: "100%", p: padding }}>
+            <Grid container sx={{ width: "100%" }} columnSpacing={2}>
+                <Grid size={1} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <Button><CloseIcon /></Button>
+                </Grid>
+                <Grid size={3}>
+                    <TextField
+                        name="column"
+                        select
+                        label="Column"
+                        sx={{ width: "100%" }}
+                        value={filter.column}
+                        onChange={(change) => {
+                            const column = change.target.value;
+                            const operators = columns[column as keyof T]?.operators ?? [];
+
+                            onChange({
+                                ...filter,
+                                column,
+                                operator: operators[0] ?? "",
+                            });
+
+                        }}
+                    >
+                        {
+                            Object.entries(columns).map(([field, value]) => {
+                                return <MenuItem key={field} value={field}> {value?.headerName} </MenuItem>
+                            })
+                        }
+                    </TextField>
+                </Grid>
+                <Grid size={3}>
+                    <TextField
+                        name="operator"
+                        select
+                        label="Operator"
+                        sx={{ width: "100%" }}
+                        value={filter.operator}
+                        onChange={(event) => {
+                            onChange({ ...filter, operator: event.target.value })
+                        }}
+                    >
+                        {operators.map((operator) => (
+                            <MenuItem key={operator} value={operator}>
+                                {operator}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </Grid>
+                <Grid size={4.5}>
+                    <TextField
+                        label="Value"
+                        name={"value"}
+                        value={filter.value}
+                        sx={{ width: "100%" }}
+
+                        onChange={(event) => {
+                            onChange({
+                                ...filter,
+                                value: event.target.value,
+                            });
+                        }}
+
+                    />
+                </Grid>
+            </Grid>
+        </Stack>
+    )
+}
+
+const numeric_operators = ["=", "!=", ">", ">=", "<", "<="]
+const string_operators = ["contains", "does not contain", "equals", "does not equal", "starts with", "ends with"]
+const date_operators = ["before", "after", "on"]
+
+export default function CustomFilterMenu<T extends GridValidRowModel>({ columns, filterStatus, setFilterStatus }: { columns: GenericGridColumn<T>[], filterStatus: FilterStatus, setFilterStatus: React.Dispatch<React.SetStateAction<FilterStatus>> }) {
+
+    const columnDefinitions: Partial<Record<keyof T, FieldFilterOptions>> = {}
+
+    for (const col of columns) {
+        if (
+            col.field === "delete" ||
+            col.field === "update" ||
+            col.field === "patch" ||
+            col.field === "create" ||
+            col.field === "download" ||
+            col.field === "header"
+        ) {
+            continue;
+        }
+
+        switch (col.type) {
+            case "string":
+                columnDefinitions[col.field] = {
+                    operators: string_operators,
+                    type: col.type,
+                    headerName: col.headerName
+                }
+                break;
+            case "dateTime":
+                columnDefinitions[col.field] = {
+                    operators: date_operators,
+                    type: col.type,
+                    headerName: col.headerName
+                }
+                break;
+            case "number":
+                columnDefinitions[col.field] = {
+                    operators: numeric_operators,
+                    type: col.type,
+                    headerName: col.headerName
+                }
+                break;
+        }
+    }
+
+    const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([{
+        id: crypto.randomUUID(),
+        column: filterStatus.initialColumn!,
+        operator: columnDefinitions[filterStatus.initialColumn!]?.operators[0]!,
+        value: ""
+    }])
+    let padding = 1
+
+    return (
+        <Popover
+            open={filterStatus.open}
+            anchorEl={filterStatus.parent}
+            onClose={() => setFilterStatus((prev) => ({ open: false, parent: prev.parent, initialColumn: prev.initialColumn }))}
+            anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+            }}
+            transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+            }}
+            slotProps={{
+                transition: {
+                    onExited: () => { setFilterStatus({ open: false, parent: null, initialColumn: null }) }
+                }
+            }}
+        >
+            <Paper sx={{ width: 750 }}>
+                <Stack direction={"column"} sx={{ width: "100%" }}>
+                    {
+                        activeFilters.map((filter) => {
+                            return (
+                                <FilterRow key={filter.id} columns={columnDefinitions} filter={filter} onChange={
+                                    (change) => {
+                                        setActiveFilters((prev) => {
+                                            return prev.map((item) => item.id === filter.id ? change : item)
+                                        })
+                                    }
+                                } />
+                            )
+                        })
+                    }
+
+
+                    <Divider />
+                    <Box sx={{ display: "flex", justifyContent: "space-between", p: padding }}>
+                        <Button startIcon={<AddIcon />} onClick={() => alert(activeFilters.length)}>Add Filter</Button>
+                        <Button startIcon={<DeleteForeverIcon />}>Remove All</Button>
+                    </Box>
+                </Stack>
+            </Paper>
+        </Popover>
+    )
+}

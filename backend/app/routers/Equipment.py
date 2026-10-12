@@ -1,24 +1,41 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 
-from app.dependencies import get_db, require_role, get_current_user
+from app.dependencies import data_query_for, get_db, require_role, get_current_user
 from app.models import Equipment, User, UserRole
 from app.schemas import EquipmentRead, EquipmentUpdate, EquipmentCreate
+from app.schemas import DataQuery, DataEnvelope
 
 router = APIRouter(
     prefix="/equipment",
     tags=["equipment"]
 )
 
-@router.get("", response_model=list[EquipmentRead])
+@router.get("", response_model=DataEnvelope[EquipmentRead])
 async def get_equipment(db_session: AsyncSession = Depends(get_db),
+                          searchQueries: DataQuery = Depends(data_query_for(Equipment, EquipmentRead)),
                         _:User = Depends(get_current_user)):
-    stmt = select(Equipment)
+    stmt = select(Equipment).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
+
+    count_stmt = select(func.count()).select_from(
+        stmt.order_by(None).subquery()
+    )
+
+    total_count = await db_session.scalar(count_stmt)
     
-    result = await db_session.execute(stmt)
+    result = await db_session.execute(
+            stmt
+            .offset(searchQueries.page_size * searchQueries.page)
+            .limit(searchQueries.page_size)
+        )
     
-    return list(result.scalars().all())
+    items = result.scalars().all()
+
+    return DataEnvelope[EquipmentRead](
+        total=total_count,
+        data=items
+    )
 
 @router.delete("/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_equipment(equipment_id: int, db_session: AsyncSession = Depends(get_db),

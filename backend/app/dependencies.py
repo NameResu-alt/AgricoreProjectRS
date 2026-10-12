@@ -1,13 +1,17 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+
+from app.schemas import DataQuery
+from app.models import Base
 from .database import AsyncSessionLocal
 from .security import decode_access_token, hash_password, verify_password
 from .models import User, UserRole
 from jwt.exceptions import InvalidTokenError
 import boto3
-from typing import Any, Generator, TYPE_CHECKING
+from typing import Annotated, Any, Generator, TYPE_CHECKING, Literal
 from mypy_boto3_s3 import S3Client
 
 async def get_db():
@@ -66,6 +70,26 @@ def require_role(*role_list: UserRole):
 
     return check_role
 
-    
+def data_query_for(model: type[Base], schema: type[BaseModel]):
+    def dependency(
+        page: Annotated[int, Query(ge=0)] = 0,
+        page_size: Annotated[int, Query(gt=0)] = 5,
+        sort: Annotated[list[str] | None, Query()] = None,
+        filter: Annotated[list[str] | None, Query()] = None,
+        filter_mode: Annotated[
+            Literal["and", "or"], Query()
+        ] = "and",
+    ) -> DataQuery:
+        return DataQuery(
+            model=model,
+            schema=schema,
+            page=page,
+            page_size=page_size,
+            sort=sort,
+            filter=filter,
+            filter_mode=filter_mode,
+        )
+
+    return dependency
 
 

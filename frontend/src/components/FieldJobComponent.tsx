@@ -8,10 +8,14 @@ import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./data
 import apiClient from "../api/client";
 import Button from "@mui/material/Button";
 import type { ServiceReportCreate } from "../api/schemas/service_report";
+import type { DataEnvelope } from "../api/schemas/dataEnvelope";
 
 export default function FieldJobTab() {
     const { user } = useAuth()
-    const [data, setData] = useState<FieldJobRead[]>([])
+    const [data, setData] = useState<DataEnvelope<FieldJobRead>>({
+        total: 0,
+        data: []
+    })
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
@@ -340,12 +344,6 @@ export default function FieldJobTab() {
         gridColumnDefinitions.push(patchOnly)
         gridColumnDefinitions.push(writeReport)
     }
-
-
-    useEffect(() => {
-        functions.get()
-    }, [])
-
 
     return (
         <GenericTabBody

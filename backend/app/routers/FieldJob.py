@@ -1,23 +1,43 @@
 from fastapi import APIRouter, Depends, UploadFile, status, HTTPException
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import FieldJob, User, UserRole
 from app.schemas import FieldJobRead, FieldJobUpdate, FieldJobCreate, FieldJobPatchStatus
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import data_query_for, get_db, get_current_user, require_role
+from app.schemas import DataQuery, DataEnvelope
 
 router = APIRouter(
     prefix="/field_jobs",
     tags=["field_jobs"]
 )
 
-@router.get("", response_model=list[FieldJobRead])
+@router.get("", response_model=DataEnvelope[FieldJobRead])
 async def get_field_jobs(db_session: AsyncSession = Depends(get_db),
+                          searchQueries: DataQuery = Depends(data_query_for(FieldJob, FieldJobRead)),
                          _:User = Depends(get_current_user)):
-    result = await db_session.execute(select(FieldJob))
-    
-    return list(result.scalars().all())
+
+    stmt = select(FieldJob).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
+
+    count_stmt = select(func.count()).select_from(
+            stmt.order_by(None).subquery()
+        )
+
+    total_count = await db_session.scalar(count_stmt)
+
+    result = await db_session.execute(
+        stmt
+        .offset(searchQueries.page_size * searchQueries.page)
+        .limit(searchQueries.page_size)
+    )
+
+    items = result.scalars().all()
+
+    return DataEnvelope[FieldJobRead](
+        total=total_count,
+        data=list(items)
+    )
 
 @router.delete("/{field_job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_field_job(field_job_id: int,

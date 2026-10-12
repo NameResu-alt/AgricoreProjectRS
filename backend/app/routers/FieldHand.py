@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 
-from app.dependencies import get_db, get_current_user, require_role
+from app.dependencies import data_query_for, get_db, get_current_user, require_role
 from app.models import FieldHand, User, UserRole
 from app.schemas import FieldHandRead, FieldHandUpdate, FieldHandCreate
 
 from sqlalchemy.ext.asyncio  import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
+
+from app.schemas import DataEnvelope, DataQuery
 
 
 router = APIRouter(
@@ -13,14 +15,29 @@ router = APIRouter(
     tags=["field_hands"]
 )
 
-@router.get("",response_model=list[FieldHandRead])
+@router.get("",response_model=DataEnvelope[FieldHandRead])
 async def get_field_hands(db_session: AsyncSession = Depends(get_db),
+                          searchQueries: DataQuery = Depends(data_query_for(FieldHand, FieldHandRead)),
                           _:User = Depends(get_current_user)):
-    stmt = select(FieldHand)
+    stmt = select(FieldHand).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
+
+    count_stmt = select(func.count()).select_from(
+        stmt.order_by(None).subquery()
+    )
+
+    total_count = await db_session.scalar(count_stmt)
     
-    result = await db_session.execute(stmt)
-    
-    return list(result.scalars().all())
+    result = await db_session.execute(
+        stmt
+        .offset(searchQueries.page_size * searchQueries.page)
+        .limit(searchQueries.page_size)
+    )
+    items = result.scalars().all()
+    #list(result.scalars().all())
+    return DataEnvelope[FieldHandRead](
+        total=total_count,
+        data=list(items)
+    )
 
 @router.delete("/{field_hand_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_field_hand(field_hand_id: int,

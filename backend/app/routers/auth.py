@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 
-from app.dependencies import get_current_user, get_db, require_role
+from app.dependencies import get_current_user, get_db, require_role, data_query_for
 from app.security import hash_password, verify_password, create_access_token
 from app.models import User, UserRole
 from app.schemas import Token, UserCreate, UserRead
+from app.schemas import DataQuery
 
 router = APIRouter(
     prefix="/auth",
@@ -16,8 +17,10 @@ router = APIRouter(
 
 @router.get("", response_model=list[UserRead])
 async def get_users(db_session: AsyncSession = Depends(get_db),
+                    searchQueries: DataQuery = Depends(data_query_for(User, UserRead)),
                     _:User = Depends(require_role(UserRole.ADMIN))):
-    result = await db_session.execute(select(User))
+    
+    result = await db_session.execute(select(User).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries))
 
     return list(result.scalars().all())
 

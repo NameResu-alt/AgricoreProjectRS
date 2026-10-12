@@ -1,13 +1,12 @@
-import type { CustomFilterModel, CustomSortingModel } from './components/datagrid/CustomColumnMenu';
+import type { CustomSortingModel } from './components/datagrid/CustomColumnMenu';
 import type { Dispatch, SetStateAction } from 'react';
-import type { FilterStatus } from './components/datagrid/CustomFilterMenu';
+import type { CustomFilterModel } from './components/datagrid/CustomFilterMenuV2';
 
 declare module '@mui/x-data-grid' {
   interface ColumnMenuPropsOverrides {
-    parentFilterModel: CustomFilterModel;
+    parentFilterModel: CustomFilterModel
+    setFilterModel: React.Dispatch<React.SetStateAction<CustomFilterModel>>;
     parentSortingModel: CustomSortingModel;
-    setParentFilterModel: Dispatch<SetStateAction<CustomFilterModel>>;
     setParentSortingModel: Dispatch<SetStateAction<CustomSortingModel>>;
-    setFilterStatus: Dispatch<SetStateAction<FilterStatus>>;
   }
 }
