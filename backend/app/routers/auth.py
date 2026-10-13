@@ -5,11 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func
 
 from app.dependencies import get_current_user, get_db, require_role, data_query_for
-from app.security import hash_password, verify_password, create_access_token
-from app.models import User, UserRole
-from app.schemas import Token, UserCreate, UserRead
+from app.security import hash_password, verify_password, create_access_token, create_refresh_token, hash_refresh_token
+from app.models import User, UserRole, RefreshToken
+from app.schemas import Token, UserCreate, UserRead, RefreshTokenRequest, InvalidateRefreshTokenRequest
 from app.schemas import DataQuery
 from app.schemas import DataEnvelope
+
+from datetime import datetime
+
 
 router = APIRouter(
     prefix="/auth",
@@ -67,7 +70,13 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db_session: AsyncSe
 
     access_token = create_access_token(data)
 
-    return Token(access_token=access_token)
+    (token_obj, token_str) = create_refresh_token(user,)
+
+    db_session.add(token_obj)
+    await db_session.commit()
+
+
+    return Token(access_token=access_token, refresh_token=token_str)
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(payload: UserCreate, 
@@ -76,3 +85,83 @@ async def register(payload: UserCreate,
     new_user = User(username = payload.username, hashed_password = hash_password(payload.password), role = payload.role)
     db_session.add(new_user)
     await db_session.commit()
+
+
+@router.post("/invalidate", status_code=status.HTTP_204_NO_CONTENT)
+async def invalidate(request: InvalidateRefreshTokenRequest, 
+                     db_session: AsyncSession = Depends(get_db)):
+    hash_token = hash_refresh_token(request.refresh_token)
+    
+    result = await db_session.execute(select(RefreshToken).where(RefreshToken.hashed_token == hash_token))
+    record = result.scalar_one_or_none()
+
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Provided Refresh token has no matching record"
+        )
+
+    if not record.valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Provided Refresh token has already been invalidated"
+        )
+
+    record.valid = False
+
+    await db_session.commit()
+
+@router.post("/refresh", response_model=Token)
+async def refresh(request: RefreshTokenRequest, db_session: AsyncSession = Depends(get_db)):
+    hash_token = hash_refresh_token(request.refresh_token)
+
+    result = await db_session.execute(select(RefreshToken).where(RefreshToken.hashed_token == hash_token))
+    record = result.scalar_one_or_none()
+
+    if record is None:
+        print("There is no matching record")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Provided Refresh token has no matching record"
+        )
+
+    if not record.valid:
+        print("The refresh token is alraedy invalidated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Provided Refresh token has already been invalidated"
+        )
+
+    record.valid = False
+    await db_session.commit()
+
+    if datetime.now() > record.expire_time:
+        print("The refresh token is expired")
+        record.valid = False
+        await db_session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Provided Refresh token is expired"
+        )
+
+    user_result = await db_session.execute(select(User).where(User.id == record.user_id))
+
+    user = user_result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User of refresh token doesn't exist"
+        )
+
+    data = {"sub": user.username, "role": user.role}
+    
+    access_token = create_access_token(data)
+
+    (token_obj, token_str) = create_refresh_token(user,)
+
+    db_session.add(token_obj)
+
+    await db_session.commit()
+
+    return Token(access_token=access_token, refresh_token=token_str)

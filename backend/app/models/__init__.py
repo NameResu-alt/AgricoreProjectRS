@@ -14,6 +14,8 @@ from .ServiceReport import ServiceReport
 
 from .User import User
 
+from .RefreshToken import RefreshToken
+
 __all__ = [
     "Base",
     "EquipmentStatus", "FieldJobStatus", "FieldJobPriority",
@@ -23,5 +25,6 @@ __all__ = [
     "FieldJob",
     "ServiceReport",
     "UserRole",
-    "User"
+    "User",
+    "RefreshToken"
 ]

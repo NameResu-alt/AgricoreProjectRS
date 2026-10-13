@@ -2,17 +2,18 @@ from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from app.schemas import DataQuery
 from app.models import Base
 from .database import AsyncSessionLocal
-from .security import decode_access_token, hash_password, verify_password
+from .security import decode_token, hash_password, verify_password
 from .models import User, UserRole
 from jwt.exceptions import InvalidTokenError
 import boto3
 from typing import Annotated, Any, Generator, TYPE_CHECKING, Literal
 from mypy_boto3_s3 import S3Client
+from jwt.exceptions import ExpiredSignatureError
 
 async def get_db():
     async with AsyncSessionLocal() as session:
@@ -38,7 +39,7 @@ async def check_db_state(db_session: AsyncSession = Depends(get_db)):
 async def get_current_user(token: str = Depends(oauth2_scheme), db_session: AsyncSession = Depends(get_db)) -> User:
     try:
 
-        access_token = decode_access_token(token)
+        access_token = decode_token(token)
         username = access_token.get("sub")
 
         result = await db_session.execute(select(User).where(User.username == username))
