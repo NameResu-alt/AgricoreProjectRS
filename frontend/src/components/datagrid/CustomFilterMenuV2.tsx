@@ -22,6 +22,7 @@ export type CustomFilterModel = {
 export const numeric_operators = ["=", "!=", ">", ">=", "<", "<="]
 export const string_operators = ["contains", "does not contain", "equals", "does not equal", "starts with", "ends with"]
 export const date_operators = ["before", "after", "on"]
+export const boolean_operators = ["is"]
 
 function DisplayFilterRow({ activeFilter, filterModel, setFilterModel }: { activeFilter: ActiveFilter, filterModel: CustomFilterModel, setFilterModel: React.Dispatch<React.SetStateAction<CustomFilterModel>> }) {
 
@@ -50,8 +51,8 @@ function DisplayFilterRow({ activeFilter, filterModel, setFilterModel }: { activ
         })
     }
 
-    function updateConditionalMode(value: string){
-        setFilterModel((prev)=>({
+    function updateConditionalMode(value: string) {
+        setFilterModel((prev) => ({
             ...prev,
             conditionalMode: value as "and" | "or"
         }))
@@ -59,6 +60,39 @@ function DisplayFilterRow({ activeFilter, filterModel, setFilterModel }: { activ
 
     let isFirst: boolean = filterModel.filters[0].id == activeFilter.id
     let isSecond: boolean = filterModel.filters.length >= 2 && filterModel.filters[1].id == activeFilter.id
+
+    const booleanFilter = <TextField
+        label="Value"
+        fullWidth
+        select
+        value={activeFilter.value ?? true}
+        onChange={(event) => {
+            const updatedFilter: ActiveFilter = {
+                ...activeFilter,
+                value: event.target.value,
+            };
+            updateCurrentFilter(updatedFilter);
+        }}
+    >
+        <MenuItem value="True">True</MenuItem>
+        <MenuItem value="False">False</MenuItem>
+    </TextField>
+
+    const nonBooleanFilter = <TextField
+                label="Value"
+                fullWidth
+                value={activeFilter.value ?? ""}
+                onChange={(event) => {
+                    let updatedFilter: ActiveFilter = {
+                        ...activeFilter,
+                        value: event.target.value,
+                    };
+                    updateCurrentFilter(updatedFilter);
+                }}
+            />
+
+    const isBoolean = filterModel.fieldFilterOptions[activeFilter.field].type == "boolean"
+
     return (
         <Stack
             direction="row"
@@ -84,7 +118,7 @@ function DisplayFilterRow({ activeFilter, filterModel, setFilterModel }: { activ
                 <CloseIcon sx={{ color: "primary.main" }} />
             </IconButton>
             {!isFirst ? (
-                <TextField select value={filterModel.conditionalMode} sx={{ width: "95px" }} disabled={!isSecond} onChange={(event)=>updateConditionalMode(event.target.value)}>
+                <TextField select value={filterModel.conditionalMode} sx={{ width: "95px" }} disabled={!isSecond} onChange={(event) => updateConditionalMode(event.target.value)}>
                     <MenuItem value="and">And</MenuItem>
                     <MenuItem value="or">Or</MenuItem>
                 </TextField>
@@ -98,10 +132,11 @@ function DisplayFilterRow({ activeFilter, filterModel, setFilterModel }: { activ
                 sx={{ width: "150px" }}
                 value={activeFilter.field}
                 onChange={(event) => {
+                    const startingValue = filterModel.fieldFilterOptions[event.target.value].type == "boolean" ? "True" : undefined
                     let updatedFilter: ActiveFilter = {
                         ...activeFilter,
                         field: event.target.value,
-                        value: undefined,
+                        value: startingValue,
                         operators: filterModel.fieldFilterOptions[event.target.value].options,
                         currentOperator: filterModel.fieldFilterOptions[event.target.value].options[0]
                     };
@@ -135,19 +170,10 @@ function DisplayFilterRow({ activeFilter, filterModel, setFilterModel }: { activ
                     </MenuItem>
                 ))}
             </TextField>
-
-            <TextField
-                label="Value"
-                fullWidth
-                value={activeFilter.value ?? ""}
-                onChange={(event) => {
-                    let updatedFilter: ActiveFilter = {
-                        ...activeFilter,
-                        value: event.target.value,
-                    };
-                    updateCurrentFilter(updatedFilter);
-                }}
-            />
+            {
+                isBoolean? booleanFilter : nonBooleanFilter
+            }
+            
         </Stack>
     )
 

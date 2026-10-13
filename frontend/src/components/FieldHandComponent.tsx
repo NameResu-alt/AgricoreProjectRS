@@ -15,9 +15,9 @@ export default function FieldHandTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
-    const[getSignal, setGetSignal] = useState(0)
-    
-    const functions = createDefaultFunctions("/field_hands", setData)
+    const [getSignal, setGetSignal] = useState(0)
+
+    const functions = createDefaultFunctions("/field_hands", setGetSignal)
 
     const createDialog: DialogDefinition<FieldHandCreate> = {
         title: () => "Create Field Hand",
@@ -126,7 +126,7 @@ export default function FieldHandTab() {
     return (
         <>
             <GenericTabBody<FieldHandRead>
-                userRole={user?.role} data={data}
+                userRole={user?.role} dataEnvelope={data}
                 gridColumnDefinition={gridColumnDefinition}
                 createDialog={createDialog}
                 currentDialogDefinition={currentDialogDefinition}
@@ -137,8 +137,8 @@ export default function FieldHandTab() {
                 setSnackbarState={setCurrentSnackbarState}
 
                 setData={setData}
-                getSignal={getSignal}
                 getURL="/field_hands"
+                getSignal={getSignal}
             />
         </>
     )

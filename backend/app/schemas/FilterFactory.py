@@ -60,6 +60,11 @@ def createFilter(filter: Filter, model: type[Base]) -> ColumnElement[bool] | Non
             case "ends with":
                 return column.endswith(filter.value)
         pass
+    elif python_type is bool:
+
+        value: bool = True if filter.value == "True" else False
+        return column == value
+        pass
     else:
         print(f"Ignoring Filter {filter.field} due to Type: {python_type}")
         pass

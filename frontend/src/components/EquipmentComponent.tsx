@@ -17,9 +17,9 @@ export default function EquipmentTab(){
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
-    const[getSignal, setGetSignal] = useState(0)
+    const [getSignal, setGetSignal] = useState(0)
 
-    const functions = createDefaultFunctions("/equipment", setData)
+    const functions = createDefaultFunctions("/equipment", setGetSignal)
 
     const createDialog: DialogDefinition<EquipmentCreate> = {
         title: () => "Create Equipment",
@@ -53,6 +53,7 @@ export default function EquipmentTab(){
         ],
         submitAction: async (value, _) => {
             await functions.post(value)
+            setGetSignal((prev)=>prev+1)
             setCurrentSnackbarState({
                 open: true,
                 options: {
@@ -176,7 +177,7 @@ export default function EquipmentTab(){
     return (
         <>
             <GenericTabBody<EquipmentRead>
-                userRole={user?.role} data={data}
+                userRole={user?.role} dataEnvelope={data}
                 gridColumnDefinition={gridColumnDefinition}
                 createDialog={createDialog}
                 currentDialogDefinition={currentDialogDefinition}
@@ -186,8 +187,8 @@ export default function EquipmentTab(){
                 snackbarState = {snackbarState}
                 setSnackbarState = {setCurrentSnackbarState}
                 setData={setData}
-                getSignal={getSignal}
                 getURL="/equipment"
+                getSignal={getSignal}
             />
         </>
     )

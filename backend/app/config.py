@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "BucketName"
     secret_key: str
     frontend_origin: str  = "http://localhost:5173"
+    default_token_expire_time_minutes: int = 30
+    
     
     model_config = SettingsConfigDict(env_file=".env")
 

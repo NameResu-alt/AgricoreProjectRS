@@ -16,11 +16,14 @@ export default function UserTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
-    const[getSignal, setGetSignal] = useState(0)
+    const [getSignal, setGetSignal] = useState(0)
 
     async function getUsers() {
+        setGetSignal((prev)=>prev+1)
+        /*
         const response = await apiClient.get<DataEnvelope<UserRead>>("/auth")
         setData(response.data)
+        */
     }
 
     async function createUser(value: UserCreate) {
@@ -95,7 +98,8 @@ export default function UserTab() {
         },
         {
             field: "is_active",
-            headerName: "Active"
+            headerName: "Active",
+            type: "boolean"
         },
         {
             field: "created_date",
@@ -201,7 +205,7 @@ export default function UserTab() {
         <>
             <GenericTabBody
                 userRole={user?.role}
-                data={data}
+                dataEnvelope={data}
                 createDialog={createDialog}
                 gridColumnDefinition={columnDefinitions}
                 dialogOpen={dialogOpen}
@@ -212,8 +216,8 @@ export default function UserTab() {
                 setSnackbarState={setCurrentSnackbarState}
 
                 setData={setData}
-                getSignal={getSignal}
                 getURL="/auth"
+                getSignal={getSignal}
             />
         </>
     )

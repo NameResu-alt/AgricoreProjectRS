@@ -145,13 +145,15 @@ export default function CustomColumnMenu({ parentFilterModel, parentSortingModel
                     let currentFilters = parentFilterModel.filters.map((f)=>({...f}))
 
                     if(!foundPrevious){
-
+                        
                         let correctOperators = parentFilterModel.fieldFilterOptions[colDef.field]
+                        const startingValue = correctOperators.type == "boolean" ? "True" : undefined
                         currentFilters.push({
                             id: crypto.randomUUID(),
                             field: colDef.field,
                             operators: correctOperators.options,
-                            currentOperator: correctOperators.options[0]
+                            currentOperator: correctOperators.options[0],
+                            value: startingValue
                         })
                     }
 

@@ -17,9 +17,9 @@ export default function FarmTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({open:false, options: null})
-    const[getSignal, setGetSignal] = useState(0)
-    
-    const functions = createDefaultFunctions("/farms", setData)
+    const [getSignal, setGetSignal] = useState(0)
+
+    const functions = createDefaultFunctions("/farms", setGetSignal)
 
     const updateDialog: DialogDefinition<FarmUpdate> = {
         title: (start) => `Update Farm ${start?.id}`,
@@ -142,7 +142,7 @@ export default function FarmTab() {
     return (
         <>
             <GenericTabBody<FarmRead>
-                userRole={user?.role} data={data}
+                userRole={user?.role} dataEnvelope={data}
                 gridColumnDefinition={dataGridColumnDefinition}
                 createDialog={createDialog}
                 currentDialogDefinition={currentDialogDefinition}
@@ -153,8 +153,8 @@ export default function FarmTab() {
                 setSnackbarState = {setCurrentSnackbarState}
 
                 setData={setData}
-                getSignal={getSignal}
                 getURL="/farms"
+                getSignal={getSignal}
             />
         </>
     )

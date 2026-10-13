@@ -19,10 +19,9 @@ export default function FieldJobTab() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
-    const[getSignal, setGetSignal] = useState(0)
-    
+    const [getSignal, setGetSignal] = useState(0)
 
-    const functions = createDefaultFunctions("/field_jobs", setData)
+    const functions = createDefaultFunctions("/field_jobs", setGetSignal)
 
     const createDialog: DialogDefinition<FieldJobCreate> = {
         title: () => "Create Field Job",
@@ -148,7 +147,8 @@ export default function FieldJobTab() {
 
     async function patchFieldJobStatus(value: FieldJobPatchStatus, id: number) {
         await apiClient.patch(`/field_jobs/${id}`, value)
-        functions.get()
+        setGetSignal((prev)=>prev+1)
+        //functions.get()
     }
 
     const fieldJobStatusPatchDialog: DialogDefinition<FieldJobPatchStatus> = {
@@ -348,7 +348,7 @@ export default function FieldJobTab() {
     return (
         <GenericTabBody
             userRole={user?.role}
-            data={data}
+            dataEnvelope={data}
             gridColumnDefinition={gridColumnDefinitions}
             createDialog={createDialog}
             currentDialogDefinition={currentDialogDefinition}
@@ -359,8 +359,8 @@ export default function FieldJobTab() {
             setSnackbarState={setCurrentSnackbarState}
 
             setData={setData}
-            getSignal={getSignal}
             getURL="/field_jobs"
+            getSignal={getSignal}
         />
     )
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from app.models import UserRole
 from datetime import datetime
 
@@ -13,3 +13,5 @@ class UserRead(BaseModel):
     role: UserRole
     is_active: bool
     created_date: datetime
+
+    model_config = ConfigDict(from_attributes=True)

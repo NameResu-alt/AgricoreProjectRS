@@ -16,9 +16,39 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use((response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const originalRequest = error.config
+        if (error.response?.status === 401 && !originalRequest._retry) {
 
-            const tokenStr = localStorage.getItem("agriCoreToken")
+            originalRequest._retry = true; //Mark the request as retried to avoid infinite loops
+
+            try{
+                const refreshToken = localStorage.getItem("agriCoreRefreshToken");
+
+                //Make a request to your auth server to refresh the token. 
+                const response = await axios.post('http://your.auth.server/refresh', {
+                    refreshToken
+                })
+
+                const {accessToken, refreshToken: newRefreshToken } = response.data;
+
+                localStorage.setItem('agriCoreAccessToken', accessToken)
+                localStorage.setItem('agriCoreRefreshToken', newRefreshToken)
+
+                //axiosInstance.deafults.headers.common['Authorizaiton'] = `Bearer ${accessToken}`;
+                
+                return apiClient(originalRequest); //Retry the original request with the new access token.
+            }
+
+            
+        }
+
+        return Promise.reject(error)
+    })
+
+export default apiClient
+
+/**
+ * const tokenStr = localStorage.getItem("agriCoreToken")
             const { exp } = jwtDecode(tokenStr!)
 
             const isExpired = Date.now() >= exp! * 1000;
@@ -28,9 +58,4 @@ apiClient.interceptors.response.use((response) => response,
                 localStorage.removeItem('agriCoreToken')
                 window.location.reload()
             }
-        }
-
-        return Promise.reject(error)
-    })
-
-export default apiClient
+ */

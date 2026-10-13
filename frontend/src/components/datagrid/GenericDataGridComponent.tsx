@@ -14,13 +14,13 @@ import { type GridSlots } from "@mui/x-data-grid";
 import CustomColumnMenu from "./CustomColumnMenu";
 import type { CustomSortingModel } from "./CustomColumnMenu";
 import type { CustomFilterModel } from "./CustomFilterMenuV2";
-import CustomFilterMenuV2, { date_operators, numeric_operators, string_operators } from "./CustomFilterMenuV2";
+import CustomFilterMenuV2, { boolean_operators, date_operators, numeric_operators, string_operators } from "./CustomFilterMenuV2";
 import type { DataEnvelope } from "../../api/schemas/dataEnvelope";
 
 export type GenericGridColumn<T extends GridValidRowModel> = {
     field: keyof T | "delete" | "update" | "patch" | "create" | "download" | "header";
     headerName: string;
-    type?: "string" | "number" | "actions" | "dateTime";
+    type?: "string" | "number" | "actions" | "dateTime" | "boolean";
     width?: number;
     renderCell?: (params: GridRenderCellParams<T, any, any, GridTreeNodeWithRender>) => React.JSX.Element;
     valueGetter?: (value: any, row: T, column: GridColDef, apiRef: React.RefObject<GridApiCommunity>) => any
@@ -109,7 +109,7 @@ export function GenericDeleteButton(successSnackbar: (id: number) => GenericSnac
     }
 }
 
-export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState, setData, getSignal, getURL }: { userRole: UserRole | undefined, data: DataEnvelope<T>, gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getSignal: number, getURL: string }) {
+export function GenericTabBody<T extends GridValidRowModel>({ userRole, dataEnvelope, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState, setData, getURL, getSignal}: { userRole: UserRole | undefined, dataEnvelope: DataEnvelope<T>, gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getURL: string, getSignal: number}) {
     return (
         <>
             <Box sx={{ height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
@@ -127,7 +127,7 @@ export function GenericTabBody<T extends GridValidRowModel>({ userRole, data, gr
                     </Button>
                 }
 
-                <GenericDataGridV3<T> rowData={data} columns={gridColumnDefinition} setData={setData} getSignal={getSignal} getURL={getURL} />
+                <GenericDataGridV3<T> dataEnvelope={dataEnvelope} columns={gridColumnDefinition} setData={setData} getURL={getURL} getSignal={getSignal}/>
                 {
                     currentDialogDefinition &&
                     <GenericDialog definition={currentDialogDefinition} dialogOpen={dialogOpen} />
@@ -159,7 +159,7 @@ function CustomFooter() {
 }
 
 //Won't own the data anymore, just make the datagrid!.
-export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData, columns, setData, getSignal, getURL }: { rowData: DataEnvelope<T>, columns: GenericGridColumn<T>[], setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getSignal: number, getURL: string }) {
+export default function GenericDataGridV3<T extends GridValidRowModel>({ dataEnvelope, columns, setData, getURL, getSignal }: { dataEnvelope: DataEnvelope<T>, columns: GenericGridColumn<T>[], setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getURL: string, getSignal: number }) {
 
     function notExtraField(field: string) {
         return !(["delete", "update", "patch", "create", "download", "header"].includes(field))
@@ -189,6 +189,9 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
             case "dateTime":
                 correctOperators = [...date_operators]
                 break;
+            case "boolean":
+                correctOperators = [...boolean_operators]
+                break;
             case "string":
             default:
                 correctOperators = [...string_operators]
@@ -214,9 +217,10 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
         conditionalMode: "and"
     })
 
+    const startPageSize = 3
     const [paginationModel, setPaginationModel] = useState({
         page: 0,
-        pageSize: 5,
+        pageSize: startPageSize,
     })
 
     const prepedColumns: GridColDef<T>[] = columns.map((col) => ({
@@ -259,10 +263,10 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
             )
         }
 
-        
-
         for (const filter of filterModel.filters) {
-            if(filter.value == undefined || filter.value == "")continue
+            if (filter.value == undefined || filter.value == "") {
+                continue
+            }
             params.append(
                 "filter",
                 JSON.stringify({
@@ -276,14 +280,22 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
         let response = await apiClient.get<DataEnvelope<T>>(get_url, {
             params: params
         })
-        alert(`Did a get: ${JSON.stringify(response.data)}`)
+
         setData(response.data)
     }
 
     useEffect(() => {
+
+        const controller = new AbortController()
+
         powerGet(getURL, setData)
+
+        return () => {
+            controller.abort();
+        }
+
     }
-        , [sortModel, filterModel.filters,filterModel.conditionalMode, paginationModel])
+        , [getSignal, sortModel, filterModel.filters, filterModel.conditionalMode, paginationModel])
 
     return (
         <>
@@ -291,6 +303,19 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
                 slots={{
                     footer: CustomFooter,
                     columnMenu: CustomColumnMenu as GridSlots['columnMenu']
+                }}
+
+                rowCount={dataEnvelope.total}
+
+                pageSizeOptions={[startPageSize, startPageSize*2, startPageSize*3, startPageSize*4]}
+                initialState={{
+                    pagination: {
+                        paginationModel: {
+                            pageSize: 3,
+                            page: 0,
+                        },
+                        rowCount: 0
+                    },
                 }}
 
                 slotProps={{
@@ -310,11 +335,11 @@ export default function GenericDataGridV3<T extends GridValidRowModel>({ rowData
                         })
                     }
                 }
-
+                paginationMode={"server"}
                 sortingMode={"server"}
                 filterMode={"server"}
                 columns={prepedColumns}
-                rows={rowData.data}
+                rows={dataEnvelope.data}
                 sx={{ p: 2, flex: 1 }}
             >
             </DataGrid>

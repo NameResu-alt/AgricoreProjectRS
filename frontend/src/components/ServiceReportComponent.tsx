@@ -11,14 +11,16 @@ import type { DataEnvelope } from "../api/schemas/dataEnvelope";
 
 export default function ServiceReportTab() {
     const { user } = useAuth()
-    const [data, setData] = useState<DataEnvelope<ServiceReportRead>>([])
+    const [data, setData] = useState<DataEnvelope<ServiceReportRead>>({
+        total: 0,
+        data: []
+    })
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentDialogDefinition, setCurrentDialogDefinition] = useState<DialogDefinition<any> | null>(null)
     const [snackbarState, setCurrentSnackbarState] = useState<SnackbarState>({ open: false, options: null })
-    const[getSignal, setGetSignal] = useState(0)
-    
+    const [getSignal, setGetSignal] = useState(0)
 
-    const functions = createDefaultFunctions("/service_reports", setData)
+    const functions = createDefaultFunctions("/service_reports", setGetSignal)
 
     const createDialog: DialogDefinition<ServiceReportCreate> = {
         title: () => "Create Service Report",
@@ -61,7 +63,7 @@ export default function ServiceReportTab() {
             }
 
             const result = await apiClient.post<ServiceReportRead>("/service_reports", formData);
-            await functions.get()
+            setGetSignal((prev)=>prev+1)
             //setData((prev) => [...prev, result.data])
 
             setCurrentSnackbarState({
@@ -216,7 +218,7 @@ export default function ServiceReportTab() {
     return (
         <GenericTabBody
             userRole={user?.role}
-            data={data}
+            dataEnvelope={data}
             gridColumnDefinition={columnDefinitions}
             createDialog={createDialog}
             currentDialogDefinition={currentDialogDefinition}
@@ -227,8 +229,8 @@ export default function ServiceReportTab() {
             setSnackbarState={setCurrentSnackbarState}
 
             setData={setData}
-            getSignal={getSignal}
             getURL="/service_reports"
+            getSignal={getSignal}
         />
     )
 }
