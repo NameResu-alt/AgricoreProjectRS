@@ -1,54 +1,147 @@
-import { type ReactNode, createContext, useContext, useState } from "react";
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
 import { type LoginCredentials, type JWTPayload } from '../api/schemas/auth';
-import apiClient from "../api/client";
+import apiClient, { ACCESS_KEY, REFRESH_KEY } from "../api/client";
+import type TokenResponse from "../api/schemas/token_schema"
+
+import { refreshAccessToken } from "../api/client";
 
 interface AuthContextValues {
     token: string | null
+    refreshToken: string | null
     user: JWTPayload | null,
     isAuthenticated: boolean,
     login: ({ username, password }: LoginCredentials) => Promise<void>,
-    logout: () => void,
+    logout: () => Promise<void>,
+    updateTokens: (tokens: TokenResponse) => void;
 }
+
 
 const AuthContext = createContext<AuthContextValues | null>(null)
 
-function decodeToken(token: string): JWTPayload {
-    const payloadSegment = token.split(".")[1]
-    const payload = JSON.parse(atob(payloadSegment));
+function decodeToken(token: string): JWTPayload | null {
+    try {
+        const payloadSegment = token.split(".")[1]
+        if (!payloadSegment) return null;
 
-    return {
-        sub: payload.sub,
-        role: payload.role,
-        exp: payload.exp
+        const payload = JSON.parse(atob(payloadSegment));
+
+        return {
+            sub: payload.sub,
+            role: payload.role,
+            exp: payload.exp
+        }
+    }
+    catch {
+        return null;
     }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [token, setToken] = useState(() => localStorage.getItem("agriCoreToken"))
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem(ACCESS_KEY))
+    const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem(REFRESH_KEY))
+
+    const updateTokens = useCallback((tokens: TokenResponse) => {
+        localStorage.setItem(ACCESS_KEY, tokens.access_token);
+        localStorage.setItem(REFRESH_KEY, tokens.refresh_token);
+
+        setToken(tokens.access_token);
+        setRefreshToken(tokens.refresh_token);
+    }, []);
+
+
 
     const user = (token ? decodeToken(token) : null)
 
-    const login = async ({ username, password }: LoginCredentials) => {
-        const formData = new URLSearchParams()
-        formData.append('username', username)
-        formData.append('password', password)
+    const login = useCallback(async ({
+        username,
+        password,
+    }: LoginCredentials) => {
+        const formData = new URLSearchParams();
+        formData.append("username", username);
+        formData.append("password", password);
 
-        const response = await apiClient.post("/auth/token", formData, {
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        })
-        localStorage.setItem('agriCoreToken', response.data.access_token);
-        setToken(response.data.access_token)
-    }
+        const response = await apiClient.post<TokenResponse>(
+            "/auth/token",
+            formData,
+            {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+            },
+        );
 
-    const logout = () => {
-        localStorage.removeItem('agriCoreToken')
-        setToken(null)
-    }
+        updateTokens(response.data);
+    }, [updateTokens]);
 
-    const isAuthenticated = token !== null &&
-        user !== null;
+    const clearSession = useCallback(() => {
+        localStorage.removeItem(ACCESS_KEY);
+        localStorage.removeItem(REFRESH_KEY);
+        setToken(null);
+        setRefreshToken(null);
+    }, []);
 
-    const value = { token, user, isAuthenticated, login, logout };
+    const logout = useCallback(async () => {
+        try {
+            if (refreshToken) {
+                await apiClient.post("/auth/invalidate", {
+                    refresh_token: refreshToken,
+                });
+            }
+        } finally {
+            clearSession();
+        }
+    }, [refreshToken, clearSession]);
+
+
+    useEffect(() => {
+        const handleTokensUpdated = (event: Event) => {
+            const tokens = (event as CustomEvent<TokenResponse>).detail;
+            updateTokens(tokens)
+        }
+
+        window.addEventListener(
+            "auth:tokens-updated",
+            handleTokensUpdated
+        )
+
+        window.addEventListener("auth:logout", clearSession)
+
+        return () => {
+            window.removeEventListener(
+                "auth:tokens-updated",
+                handleTokensUpdated,
+            );
+
+            window.removeEventListener("auth:logout", clearSession)
+        };
+
+    }, [updateTokens])
+
+    useEffect(() => {
+        if (!token || !refreshToken || user?.exp == null) return
+        let cancelled = false;
+
+        const delay = user.exp * 1000 - Date.now() - 60_000;
+
+        const timer = setTimeout(async () => {
+            try {
+                await refreshAccessToken();
+            } catch {
+                
+            }
+        }, Math.max(0, delay));
+
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer)
+        };
+    }, [token, refreshToken, user?.exp])
+
+
+    const isAuthenticated = user !== null && user.exp * 1000 > Date.now()
+
+    const value = { token, refreshToken, user, isAuthenticated, login, logout, updateTokens };
 
     return <AuthContext.Provider value={value}> {children}</AuthContext.Provider>;
 }
