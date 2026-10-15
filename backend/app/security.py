@@ -23,7 +23,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
-def create_access_token(data: dict[str,str], expire_time: timedelta = None) -> str:
+def create_access_token(data: dict[str,Any], expire_time: timedelta | None = None) -> str:
     copied_data = data.copy()
 
     expire = datetime.now(timezone.utc) + (expire_time or timedelta(minutes=DEFAULT_TOKEN_EXPIRE_TIME_MINUTES))
@@ -31,7 +31,7 @@ def create_access_token(data: dict[str,str], expire_time: timedelta = None) -> s
     copied_data["exp"] = expire
     return jwt.encode(payload=copied_data, key=SECRET_KEY, algorithm=ALGORITHM)
 
-def create_refresh_token(user: User, expire_time: timedelta = None) -> tuple[RefreshToken, str]:
+def create_refresh_token(user: User, expire_time: timedelta | None = None) -> tuple[RefreshToken, str]:
 
     expire = datetime.now(timezone.utc) + (expire_time or timedelta(minutes=DEFAULT_REFRESH_TOKEN_EXPIRE_TIME_MINUTES))
 

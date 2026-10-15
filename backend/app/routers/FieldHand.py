@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 
-from app.dependencies import data_query_for, get_db, get_current_user, require_role
-from app.models import FieldHand, User, UserRole
+from app.dependencies import data_query_for, get_db, permission_endpoint
+from app.models import FieldHand, User, UserRole, Permission
 from app.schemas import FieldHandRead, FieldHandUpdate, FieldHandCreate
 
 from sqlalchemy.ext.asyncio  import AsyncSession
@@ -15,17 +15,16 @@ router = APIRouter(
     tags=["field_hands"]
 )
 
-@router.get("",response_model=DataEnvelope[FieldHandRead])
+@router.get("",response_model=DataEnvelope[FieldHandRead], **permission_endpoint(Permission.FIELD_HAND_READ))
 async def get_field_hands(db_session: AsyncSession = Depends(get_db),
-                          searchQueries: DataQuery = Depends(data_query_for(FieldHand, FieldHandRead)),
-                          _:User = Depends(get_current_user)):
+                          searchQueries: DataQuery = Depends(data_query_for(FieldHand, FieldHandRead))):
     stmt = select(FieldHand).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
 
     count_stmt = select(func.count()).select_from(
         stmt.order_by(None).subquery()
     )
 
-    total_count = await db_session.scalar(count_stmt)
+    total_count = await db_session.scalar(count_stmt) or 0
     
     result = await db_session.execute(
         stmt
@@ -36,20 +35,18 @@ async def get_field_hands(db_session: AsyncSession = Depends(get_db),
     #list(result.scalars().all())
     return DataEnvelope[FieldHandRead](
         total=total_count,
-        data=list(items)
+        data=list(items) # type: ignore
     )
 
-@router.delete("/{field_hand_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{field_hand_id}", status_code=status.HTTP_204_NO_CONTENT, **permission_endpoint(Permission.FIELD_HAND_DELETE))
 async def delete_field_hand(field_hand_id: int,
-                            db_session: AsyncSession = Depends(get_db),
-                            _:User = Depends(require_role(UserRole.ADMIN))):
+                            db_session: AsyncSession = Depends(get_db)):
     await db_session.execute(delete(FieldHand).where(FieldHand.id == field_hand_id))
     await db_session.commit()
 
-@router.post("", response_model=FieldHandRead)
+@router.post("", response_model=FieldHandRead, **permission_endpoint(Permission.FIELD_HAND_CREATE))
 async def create_field_hand(payload: FieldHandCreate,
-                            db_session: AsyncSession = Depends(get_db),
-                            _:User = Depends(require_role(UserRole.ADMIN))):
+                            db_session: AsyncSession = Depends(get_db)):
     new_field_hand = FieldHand(**payload.model_dump())
 
     db_session.add(new_field_hand)
@@ -58,11 +55,10 @@ async def create_field_hand(payload: FieldHandCreate,
 
     return new_field_hand
 
-@router.put("/{field_hand_id}", response_model= FieldHandRead)
+@router.put("/{field_hand_id}", response_model= FieldHandRead, **permission_endpoint(Permission.FIELD_HAND_UPDATE))
 async def update_field_hand(field_hand_id: int,
                             payload: FieldHandUpdate,
-                            db_session: AsyncSession = Depends(get_db),
-                            _:User = Depends(require_role(UserRole.ADMIN))):
+                            db_session: AsyncSession = Depends(get_db)):
     result = await db_session.execute(select(FieldHand).where(FieldHand.id == field_hand_id))
 
     current_field_hand = result.scalar_one_or_none()

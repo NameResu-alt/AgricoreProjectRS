@@ -6,8 +6,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import data_query_for, get_db, get_current_user, require_role, get_s3
-from app.models import ServiceReport, User, UserRole
+from app.dependencies import data_query_for, get_db, get_s3, permission_endpoint
+from app.models import ServiceReport, User, UserRole, Permission
 from app.schemas import ServiceReportRead, ServiceReportUpdate, ServiceReportCreate
 from uuid import uuid4
 
@@ -19,10 +19,9 @@ router = APIRouter(
     tags=["service_reports"]
 )
 
-@router.get("",response_model=DataEnvelope[ServiceReportRead])
+@router.get("",response_model=DataEnvelope[ServiceReportRead], **permission_endpoint(Permission.SERVICE_REPORT_READ))
 async def get_service_reports(db_session: AsyncSession = Depends(get_db),
-                              searchQueries: DataQuery = Depends(data_query_for(ServiceReport, ServiceReportRead)),
-                              _:User = Depends(get_current_user)):
+                              searchQueries: DataQuery = Depends(data_query_for(ServiceReport, ServiceReportRead))):
     stmt = select(ServiceReport).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
 
     count_stmt = select(func.count()).select_from(
@@ -35,28 +34,26 @@ async def get_service_reports(db_session: AsyncSession = Depends(get_db),
         .limit(searchQueries.page_size)
     )
 
-    total_count = await db_session.scalar(count_stmt)
+    total_count = await db_session.scalar(count_stmt) or 0
     items = list(result.scalars().all())
     
     return DataEnvelope[ServiceReportRead](
         total=total_count,
-        data=items
+        data=items # type: ignore
     )
 
-@router.delete("/{service_report_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{service_report_id}", status_code=status.HTTP_204_NO_CONTENT, **permission_endpoint(Permission.SERVICE_REPORT_DELETE))
 async def delete_service_report(service_report_id: int,
-                                db_session: AsyncSession = Depends(get_db),
-                                _:User = Depends(require_role(UserRole.ADMIN))):
+                                db_session: AsyncSession = Depends(get_db)):
     await db_session.execute(delete(ServiceReport).where(ServiceReport.id == service_report_id))
     await db_session.commit()
 
-@router.post("", response_model=ServiceReportRead)
+@router.post("", response_model=ServiceReportRead, **permission_endpoint(Permission.SERVICE_REPORT_CREATE, Permission.FIELD_JOB_ASSIGN_SERVICE_REPORT))
 async def create_service_report(
                                 payload: str = Form(...),
                                 diagnostic_report: UploadFile = File(...),
                                 s3_client = Depends(get_s3),
-                                db_session: AsyncSession = Depends(get_db),
-                                _:User = Depends(require_role(UserRole.ADMIN, UserRole.FIELD_HAND))):
+                                db_session: AsyncSession = Depends(get_db)):
 
     report_data = ServiceReportCreate.model_validate_json(payload)
     report_data.file_url = report_data.file_url.removeprefix("/").removesuffix("/")
@@ -79,7 +76,7 @@ async def create_service_report(
 
     return new_service_report
 
-@router.get("/{service_report_id}/download")
+@router.get("/{service_report_id}/download", **permission_endpoint(Permission.SERVICE_REPORT_READ))
 async def download_service_report_file(
     service_report_id:int,
     s3_client = Depends(get_s3),
@@ -133,11 +130,10 @@ async def download_service_report_file(
     )
     
 
-@router.put("/{service_report_id}", response_model=ServiceReportRead)
+@router.put("/{service_report_id}", response_model=ServiceReportRead, **permission_endpoint(Permission.SERVICE_REPORT_UPDATE))
 async def update_service_report(service_report_id: int,
                                 payload: ServiceReportUpdate,
-                                db_session: AsyncSession = Depends(get_db),
-                                _:User = Depends(require_role(UserRole.ADMIN))):
+                                db_session: AsyncSession = Depends(get_db)):
     result = await db_session.execute(select(ServiceReport).where(ServiceReport.id == service_report_id))
 
     current_service_report = result.scalar_one_or_none()

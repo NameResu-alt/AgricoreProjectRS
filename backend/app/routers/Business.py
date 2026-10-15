@@ -2,8 +2,8 @@ from fastapi import Depends, APIRouter, Query
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from app.dependencies import get_current_user
-from app.models import User
+from app.dependencies import permission_endpoint
+from app.models import User, Permission
 
 from app.models import (
     Equipment,
@@ -24,10 +24,9 @@ from app.dependencies import get_db
 router = APIRouter(prefix="/business", tags=["business"])
 
 
-@router.get("/low_fuel_alert", response_model=list[EquipmentRead])
+@router.get("/low_fuel_alert", response_model=list[EquipmentRead], **permission_endpoint(Permission.BUSINESS_READ))
 async def get_low_fuel_alert(
     fuel_level: int = Query(default=20, ge=0),
-    _: User = Depends(get_current_user),
     db_session: AsyncSession = Depends(get_db),
 ):
     """
@@ -42,9 +41,8 @@ async def get_low_fuel_alert(
     return list(result.scalars().all())
 
 
-@router.get("/colocation_discrepancies", response_model=list[FieldJobRead])
-async def get_colocation_discrepancies(db_session: AsyncSession = Depends(get_db),
-                                       _: User = Depends(get_current_user)):
+@router.get("/colocation_discrepancies", response_model=list[FieldJobRead], **permission_endpoint(Permission.BUSINESS_READ))
+async def get_colocation_discrepancies(db_session: AsyncSession = Depends(get_db)):
     stmt = (
         select(FieldJob)
         .join(Equipment)
@@ -57,9 +55,8 @@ async def get_colocation_discrepancies(db_session: AsyncSession = Depends(get_db
     return list(result.scalars().all())
 
 
-@router.get("/reliability_metrics", response_model=dict[str, EquipmentMetric])
-async def get_reliability_metrics(db_session: AsyncSession = Depends(get_db),
-                                  _: User = Depends(get_current_user)):
+@router.get("/reliability_metrics", response_model=dict[str, EquipmentMetric], **permission_endpoint(Permission.BUSINESS_READ))
+async def get_reliability_metrics(db_session: AsyncSession = Depends(get_db)):
     stmt = (
         select(
             Equipment.model,
@@ -86,9 +83,9 @@ async def get_reliability_metrics(db_session: AsyncSession = Depends(get_db),
     return outcome
 
 
-@router.get("/maintenance_flags", response_model=dict[int,FarmMaintenaceRatio])
+@router.get("/maintenance_flags", response_model=dict[int,FarmMaintenaceRatio], **permission_endpoint(Permission.BUSINESS_READ))
 async def get_maintenance_flags(
-    ratio: int = Query(default=30, ge=0), db_session: AsyncSession = Depends(get_db), _: User = Depends(get_current_user)
+    ratio: int = Query(default=30, ge=0), db_session: AsyncSession = Depends(get_db)
 ):
     stmt = (
         select(
@@ -124,13 +121,12 @@ async def get_maintenance_flags(
     
     return outcome_dict
     
-@router.get("/reporting_lines", response_model=int)
-async def get_reporting_lines(supervisor_id: int, db_session: AsyncSession = Depends(get_db),
-                              _: User = Depends(get_current_user)) -> int:
+@router.get("/reporting_lines", response_model=int, **permission_endpoint(Permission.BUSINESS_READ))
+async def get_reporting_lines(supervisor_id: int, db_session: AsyncSession = Depends(get_db)) -> int:
     #active field jobs.
     #farm(supervisor_id) -> Equipment -> Field Job <- Field Hand
     stmt = select(func.count(FieldJob.id.distinct())).select_from(Farm).join(Equipment).join(FieldJob).join(FieldHand).where(FieldJob.status == FieldJobStatus.IN_PROGRESS, Farm.supervisor_id == supervisor_id).distinct()
     
     result = await db_session.execute(stmt)
     
-    return result.scalar_one_or_none()
+    return result.scalar_one_or_none() or 0

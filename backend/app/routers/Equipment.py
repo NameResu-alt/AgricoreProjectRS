@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func
 
-from app.dependencies import data_query_for, get_db, require_role, get_current_user
-from app.models import Equipment, User, UserRole
+from app.dependencies import data_query_for, get_db, permission_endpoint
+from app.models import Equipment, User, UserRole, Permission
 from app.schemas import EquipmentRead, EquipmentUpdate, EquipmentCreate
 from app.schemas import DataQuery, DataEnvelope
 
@@ -12,17 +12,16 @@ router = APIRouter(
     tags=["equipment"]
 )
 
-@router.get("", response_model=DataEnvelope[EquipmentRead])
+@router.get("", response_model=DataEnvelope[EquipmentRead], **permission_endpoint(Permission.EQUIPMENT_READ))
 async def get_equipment(db_session: AsyncSession = Depends(get_db),
-                          searchQueries: DataQuery = Depends(data_query_for(Equipment, EquipmentRead)),
-                        _:User = Depends(get_current_user)):
+                          searchQueries: DataQuery = Depends(data_query_for(Equipment, EquipmentRead))):
     stmt = select(Equipment).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
 
     count_stmt = select(func.count()).select_from(
         stmt.order_by(None).subquery()
     )
 
-    total_count = await db_session.scalar(count_stmt)
+    total_count = await db_session.scalar(count_stmt) or 0
     
     result = await db_session.execute(
             stmt
@@ -34,20 +33,18 @@ async def get_equipment(db_session: AsyncSession = Depends(get_db),
 
     return DataEnvelope[EquipmentRead](
         total=total_count,
-        data=items
+        data=items # type: ignore
     )
 
-@router.delete("/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_equipment(equipment_id: int, db_session: AsyncSession = Depends(get_db),
-                           _:User = Depends(require_role(UserRole.ADMIN))):
+@router.delete("/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT, **permission_endpoint(Permission.EQUIPMENT_DELETE))
+async def delete_equipment(equipment_id: int, db_session: AsyncSession = Depends(get_db)):
     stmt = delete(Equipment).where(Equipment.id == equipment_id)
     await db_session.execute(stmt)
     await db_session.commit()
 
-@router.post("", response_model=EquipmentRead)
+@router.post("", response_model=EquipmentRead, **permission_endpoint(Permission.EQUIPMENT_CREATE))
 async def create_equipment(payload: EquipmentCreate,
-                           db_session: AsyncSession = Depends(get_db),
-                           _:User = Depends(require_role(UserRole.ADMIN))):
+                           db_session: AsyncSession = Depends(get_db)):
     new_equipment = Equipment(**payload.model_dump())
     db_session.add(new_equipment)
     await db_session.commit()
@@ -55,10 +52,9 @@ async def create_equipment(payload: EquipmentCreate,
 
     return new_equipment
 
-@router.put("/{equipment_id}", response_model=EquipmentRead)
+@router.put("/{equipment_id}", response_model=EquipmentRead, **permission_endpoint(Permission.EQUIPMENT_UPDATE))
 async def update_equipment(equipment_id: int, payload: EquipmentUpdate,
-                           db_session: AsyncSession = Depends(get_db),
-                           _:User = Depends(require_role(UserRole.ADMIN))):
+                           db_session: AsyncSession = Depends(get_db)):
     current_equipment = await db_session.get(Equipment, equipment_id)
 
     if current_equipment is None:

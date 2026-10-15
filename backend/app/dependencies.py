@@ -3,12 +3,13 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
+from sqlalchemy.orm import selectinload
 
 from app.schemas import DataQuery
-from app.models import Base
+from app.models import Base, Role
 from .database import AsyncSessionLocal
 from .security import decode_token, hash_password, verify_password
-from .models import User, UserRole
+from .models import User, UserRole, Permission
 from jwt.exceptions import InvalidTokenError
 import boto3
 from typing import Annotated, Any, Generator, TYPE_CHECKING, Literal
@@ -21,7 +22,7 @@ async def get_db():
 
 s3_client = boto3.client("s3")
 
-def get_s3() -> Generator[S3Client, Any,None]:
+def get_s3() -> S3Client:
     return s3_client
 
 
@@ -42,7 +43,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db_session: Asyn
         access_token = decode_token(token)
         username = access_token.get("sub")
 
-        result = await db_session.execute(select(User).where(User.username == username))
+        result = await db_session.execute(select(User).where(User.username == username).options(selectinload(User.role).selectinload(Role.permissions)))
 
         user: User | None = result.scalar_one_or_none()
 
@@ -51,6 +52,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db_session: Asyn
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Unable to find corresponding user"
             )
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User is no longer active"
+            )
+        
     except:
         #InvalidTokenError as ex
         raise HTTPException(
@@ -59,7 +67,63 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db_session: Asyn
         )
 
     return user
-    
+
+from collections.abc import Callable
+from fastapi import Depends
+from typing import Any
+
+def permission_endpoint(*permissions: Permission) -> dict[str, Any]:
+    return {
+        "dependencies": [Depends(require_permission(*permissions))],
+        "openapi_extra": {
+            "x-required-permissions": [p.value for p in permissions],
+        },
+    }
+
+def require_permission(*permission_list: Permission):
+    async def check_permission(user: User = Depends(get_current_user), require_all: bool = False) -> User:
+        if user.role is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Current user does not have an active role"
+            )
+        
+        user_permissions = {perm.permission for perm in user.role.permissions}
+
+        
+        unmatched_permissions = set(permission_list) - user_permissions
+
+        if not unmatched_permissions:
+            return user
+
+        if not require_all and len(unmatched_permissions) < len(permission_list):
+            return user
+
+        found_a_match = False
+
+        for missing_permission in unmatched_permissions:
+            wildcard_value = f"{missing_permission.value.split(':', 1)[0]}:*"
+            wildcard = Permission._value2member_map_.get(wildcard_value)
+
+            if wildcard is None or wildcard not in user_permissions:
+                if require_all:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="User does not have permission to access this resource"
+                    )
+            else:
+                found_a_match = True
+
+        if not found_a_match:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User does not have permission to access this resource"
+            )
+
+        return user
+    return check_permission
+
+"""
 def require_role(*role_list: UserRole):
     async def check_role(user: User = Depends(get_current_user)) -> User:
         if user.role not in role_list:
@@ -70,6 +134,7 @@ def require_role(*role_list: UserRole):
         return user
 
     return check_role
+"""
 
 def data_query_for(model: type[Base], schema: type[BaseModel]):
     def dependency(

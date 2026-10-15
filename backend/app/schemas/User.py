@@ -7,10 +7,16 @@ class UserCreate(BaseModel):
     password: str
     role: UserRole
 
+class RoleRead(BaseModel):
+    name: str
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
 class UserRead(BaseModel):
     id: int
     username: str
-    role: UserRole
+    role: RoleRead | None
     is_active: bool
     created_date: datetime
 

@@ -1,6 +1,6 @@
 from .Base import Base
 
-from .Enums import EquipmentStatus, FieldJobStatus, FieldJobPriority, UserRole
+from .Enums import EquipmentStatus, FieldJobStatus, FieldJobPriority, UserRole, Permission
 
 from .Equipment import Equipment
 
@@ -16,6 +16,11 @@ from .User import User
 
 from .RefreshToken import RefreshToken
 
+from .Role import Role
+
+from .RolePermission import RolePermission
+
+
 __all__ = [
     "Base",
     "EquipmentStatus", "FieldJobStatus", "FieldJobPriority",
@@ -26,5 +31,8 @@ __all__ = [
     "ServiceReport",
     "UserRole",
     "User",
-    "RefreshToken"
+    "Permission",
+    "RefreshToken",
+    "Role",
+    "RolePermission"
 ]

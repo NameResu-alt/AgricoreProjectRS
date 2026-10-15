@@ -2,8 +2,8 @@ from app.schemas import FarmRead, FarmUpdate, FarmCreate
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import Farm, User, UserRole
-from app.dependencies import data_query_for, get_db, get_current_user, require_role
+from app.models import Farm, User, UserRole, Permission
+from app.dependencies import data_query_for, get_db, permission_endpoint
 from app.schemas.Envelope import DataQuery, DataEnvelope
 
 router = APIRouter(
@@ -11,17 +11,16 @@ router = APIRouter(
     tags=["farms"]
 )
 
-@router.get("", response_model=DataEnvelope[FarmRead])
+@router.get("", response_model=DataEnvelope[FarmRead], **permission_endpoint(Permission.FARM_READ))
 async def get_farms(db_session: AsyncSession = Depends(get_db),
-                          searchQueries: DataQuery = Depends(data_query_for(Farm, FarmRead)),
-                    _: User = Depends(get_current_user)) -> list[Farm]:
+                          searchQueries: DataQuery = Depends(data_query_for(Farm, FarmRead))) -> list[Farm]:
     stmt = select(Farm).where(searchQueries.filterQuery).order_by(*searchQueries.sortQueries)
 
     count_stmt = select(func.count()).select_from(
         stmt.order_by(None).subquery()
     )
 
-    total_count = await db_session.scalar(count_stmt)
+    total_count = await db_session.scalar(count_stmt) or 0
 
     result = await db_session.execute(
         stmt
@@ -32,20 +31,18 @@ async def get_farms(db_session: AsyncSession = Depends(get_db),
 
     return DataEnvelope[FarmRead](
         total=total_count,
-        data=items
+        data=items # type: ignore
     )
 
-@router.delete("/{farm_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{farm_id}", status_code=status.HTTP_204_NO_CONTENT, **permission_endpoint(Permission.FARM_DELETE))
 async def delete_farm(farm_id: int,
-                      db_session: AsyncSession = Depends(get_db),
-                      _: User = Depends(require_role(UserRole.ADMIN))):
+                      db_session: AsyncSession = Depends(get_db)):
     await db_session.execute(delete(Farm).where(Farm.id == farm_id))
     await db_session.commit()
 
-@router.post("", response_model=FarmRead)
+@router.post("", response_model=FarmRead, **permission_endpoint(Permission.FARM_CREATE))
 async def create_farm(payload: FarmCreate,
-                      db_session: AsyncSession = Depends(get_db),
-                      _:User = Depends(require_role(UserRole.ADMIN))):
+                      db_session: AsyncSession = Depends(get_db)):
     new_farm = Farm(**payload.model_dump())
 
     db_session.add(new_farm)
@@ -55,12 +52,11 @@ async def create_farm(payload: FarmCreate,
 
     return new_farm
 
-@router.put("/{farm_id}", response_model=FarmRead)
+@router.put("/{farm_id}", response_model=FarmRead, **permission_endpoint(Permission.FARM_UPDATE))
 async def update_farm(
     farm_id: int,
     payload: FarmUpdate,
-    db_session: AsyncSession = Depends(get_db),
-    _: User = Depends(require_role(UserRole.ADMIN))
+    db_session: AsyncSession = Depends(get_db)
 ):
     result = await db_session.execute(select(Farm).where(Farm.id == farm_id))
 

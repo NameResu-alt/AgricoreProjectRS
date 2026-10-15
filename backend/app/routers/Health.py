@@ -1,8 +1,8 @@
 from fastapi import APIRouter, status,Depends,HTTPException;
-from app.dependencies import get_db, require_role, get_s3, check_db_state
+from app.dependencies import get_db, get_s3, check_db_state, permission_endpoint
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models import UserRole, User
+from app.models import UserRole, User, Permission
 from app.schemas import HealthDetailReport
 from typing import TYPE_CHECKING
 from app.config import settings
@@ -27,12 +27,11 @@ async def db_health_check(dbSession: AsyncSession = Depends(get_db)):
             detail="database is down"
         )
 
-@router.get("/details", response_model=HealthDetailReport)
+@router.get("/details", response_model=HealthDetailReport, **permission_endpoint(Permission.HEALTH_READ))
 async def comprehensive_health_check(
     _ = Depends(check_db_state),
     dbSession: AsyncSession = Depends(get_db),
-    s3_client: S3Client = Depends(get_s3),
-    _1: User = Depends(require_role(UserRole.ADMIN))
+    s3_client: S3Client = Depends(get_s3)
     ):
     
     s3_healthy = True
