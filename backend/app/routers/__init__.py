@@ -6,6 +6,7 @@ from .ServiceReport import router as ServiceReportRouter
 from .Business import router as BusinessRouter
 from .auth import router as AuthRouter
 from .Health import router as HealthRouter
+from .Role import router as RoleRouter
 
 __all__ = [
     "FarmRouter",
@@ -15,5 +16,6 @@ __all__ = [
     "ServiceReportRouter",
     "BusinessRouter",
     "AuthRouter",
-    "HealthRouter"
+    "HealthRouter",
+    "RoleRouter"
 ]

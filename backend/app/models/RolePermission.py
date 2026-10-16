@@ -11,7 +11,7 @@ class RolePermission(Base):
     __tablename__="role_permissions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    role_id: Mapped[int] = mapped_column(Integer, ForeignKey("roles.id"))
+    role_id: Mapped[int] = mapped_column(Integer, ForeignKey("roles.id", ondelete="CASCADE"))
     permission: Mapped[Permission] = mapped_column(
         SQLEnum(
             Permission,

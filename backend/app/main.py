@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from asyncpg import exceptions
-from app.routers import FarmRouter, EquipmentRouter, FieldHandRouter, FieldJobRouter, ServiceReportRouter, BusinessRouter, AuthRouter, HealthRouter
+from app.routers import FarmRouter, EquipmentRouter, FieldHandRouter, FieldJobRouter, ServiceReportRouter, BusinessRouter, AuthRouter, HealthRouter, RoleRouter
 from app.models import Base
 from app.config import settings
 app = FastAPI(
@@ -32,6 +32,7 @@ app.include_router(ServiceReportRouter)
 app.include_router(BusinessRouter)
 app.include_router(AuthRouter)
 app.include_router(HealthRouter)
+app.include_router(RoleRouter)
 
 
 @app.exception_handler(IntegrityError)
@@ -40,8 +41,6 @@ async def integrity_error_handler(
     exc: IntegrityError,
 ) -> JSONResponse:
     cause = exc.orig.__cause__
-
-
 
     if isinstance(cause, exceptions.UniqueViolationError):
         print("Unique constraint violation!")

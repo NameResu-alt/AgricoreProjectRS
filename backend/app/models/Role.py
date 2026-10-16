@@ -17,7 +17,7 @@ class Role(Base):
     created_date: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
-    permissions: Mapped[list["RolePermission"]] = relationship(back_populates="role")
+    permissions: Mapped[list["RolePermission"]] = relationship(back_populates="role", cascade="all, delete", passive_deletes=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=true())
 

@@ -8,16 +8,18 @@ from .User import UserCreate, UserRead
 from .Health import HealthDetailReport
 from .Envelope import Filter, Sort, Page, DataQuery, DataEnvelope
 from .RefreshToken import RefreshTokenRequest, InvalidateRefreshTokenRequest
+from .Role import RoleRead, RoleCreate, RoleUpdate
 
 __all__ = [
     "FarmRead", "FarmCreate", "FarmUpdate", "FarmMaintenaceRatio",
     "EquipmentRead", "EquipmentCreate", "EquipmentUpdate", "EquipmentMetric",
     "FieldHandRead", "FieldHandCreate", "FieldHandUpdate",
-    "FieldJobRead", "FieldJobCreate", "FieldJobUpdate", "FieldJobPatchStatus"
+    "FieldJobRead", "FieldJobCreate", "FieldJobUpdate", "FieldJobPatchStatus",
     "ServiceReportRead", "ServiceReportCreate", "ServiceReportUpdate",
     "Token",
     "UserCreate", "UserRead",
     "HealthDetailReport",
     "Filter","Sort","Page", "DataQuery", "DataEnvelope",
-    "RefreshTokenRequest", "InvalidateRefreshTokenRequest"
+    "RefreshTokenRequest", "InvalidateRefreshTokenRequest",
+    "RoleRead", "RoleCreate", "RoleUpdate"
 ]

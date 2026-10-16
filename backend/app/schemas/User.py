@@ -1,11 +1,10 @@
 from pydantic import BaseModel, ConfigDict
-from app.models import UserRole
 from datetime import datetime
 
 class UserCreate(BaseModel):
     username: str
     password: str
-    role: UserRole
+    role: str
 
 class RoleRead(BaseModel):
     name: str

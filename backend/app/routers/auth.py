@@ -12,7 +12,7 @@ from app.schemas import Token, UserCreate, UserRead, RefreshTokenRequest, Invali
 from app.schemas import DataQuery
 from app.schemas import DataEnvelope
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 router = APIRouter(
@@ -96,7 +96,18 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db_session: AsyncSe
 @router.post("/register", status_code=status.HTTP_201_CREATED, **permission_endpoint(Permission.USER_CREATE))
 async def register(payload: UserCreate, 
                    db_session: AsyncSession = Depends(get_db)):
-    new_user = User(username = payload.username, hashed_password = hash_password(payload.password), role = payload.role)
+
+    check_role = await db_session.execute(select(Role).where(Role.name==payload.role))
+
+    role = check_role.scalar_one_or_none()
+
+    if role is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provided role was not found"
+        )
+    
+    new_user = User(username = payload.username, hashed_password = hash_password(payload.password), role = role)
     db_session.add(new_user)
     await db_session.commit()
 
@@ -149,7 +160,7 @@ async def refresh(request: RefreshTokenRequest, db_session: AsyncSession = Depen
     record.valid = False
     await db_session.commit()
 
-    if datetime.now() > record.expire_time:
+    if datetime.now(timezone.utc) > record.expire_time:
         print("The refresh token is expired")
         record.valid = False
         await db_session.commit()
@@ -158,7 +169,7 @@ async def refresh(request: RefreshTokenRequest, db_session: AsyncSession = Depen
             detail="Provided Refresh token is expired"
         )
 
-    user_result = await db_session.execute(select(User).where(User.id == record.user_id))
+    user_result = await db_session.execute(select(User).where(User.id == record.user_id).options(selectinload(User.role).selectinload(Role.permissions)))
 
     user = user_result.scalar_one_or_none()
 
