@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { hasPermission, useAuth } from "../context/AuthContext";
 import { EquipmentStatus, type EquipmentCreate, type EquipmentRead, type EquipmentUpdate } from "../api/schemas/equipment";
 import { type DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
@@ -7,6 +7,7 @@ import type { GenericGridColumn, SnackbarState} from "./datagrid/GenericDataGrid
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./datagrid/GenericDataGridComponent";
 import CircularProgressWithLabel from "./CircularProgressWithLabel";
 import { type DataEnvelope } from "../api/schemas/dataEnvelope";
+import { Permission } from "../api/schemas/auth";
 
 export default function EquipmentTab(){
     const {user} = useAuth()
@@ -165,9 +166,11 @@ export default function EquipmentTab(){
         },
     ]
 
-    if(user?.role == "Admin")
-    {
+    if(hasPermission(Permission.EQUIPMENT_UPDATE)){
         gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+    }
+
+    if(hasPermission(Permission.EQUIPMENT_DELETE)){
         gridColumnDefinition.push(GenericDeleteButton(
             (id)=>({message:`Successfully deleted Equipment ${id}`, severity:"success", duration:3000}),
             (id, _)=>({message:`Failed to delete Equipment ${id}`, severity:"error", duration:3000}),
@@ -177,7 +180,8 @@ export default function EquipmentTab(){
     return (
         <>
             <GenericTabBody<EquipmentRead>
-                userRole={user?.role} dataEnvelope={data}
+                createPermission={Permission.EQUIPMENT_CREATE}
+                dataEnvelope={data}
                 gridColumnDefinition={gridColumnDefinition}
                 createDialog={createDialog}
                 currentDialogDefinition={currentDialogDefinition}

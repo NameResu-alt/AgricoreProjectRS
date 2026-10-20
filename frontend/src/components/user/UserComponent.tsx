@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { UserRole, type UserCreate, type UserRead } from "../api/schemas/auth";
-import type { DialogDefinition } from "./DialogComponent";
-import apiClient from "../api/client";
-import { GenericTabBody, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
+import { useAuth } from "../../context/AuthContext";
+import { Permission, type UserCreate, type UserRead } from "../../api/schemas/auth";
+import type { DialogDefinition } from "../DialogComponent";
+import apiClient from "../../api/client";
+import { GenericTabBody, type GenericGridColumn, type SnackbarState } from "../datagrid/GenericDataGridComponent";
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Button } from "@mui/material";
-import type { DataEnvelope } from "../api/schemas/dataEnvelope";
+import type { DataEnvelope } from "../../api/schemas/dataEnvelope";
 export default function UserTab() {
     const { user } = useAuth()
     const [data, setData] = useState<DataEnvelope<UserRead>>({
@@ -57,8 +57,10 @@ export default function UserTab() {
             {
                 field: "role",
                 headerName: "Role",
-                type: "text",
+                type: "text"/*,
                 options: Object.values(UserRole)
+                Would have to make a query when I got here to see what user roles are currently available. 
+                */
             }
         ],
         submitAction: async (value, _) => {
@@ -94,7 +96,10 @@ export default function UserTab() {
         },
         {
             field: "role",
-            headerName: "Role"
+            headerName: "Role",
+            renderCell: (params)=>{
+                return <>{params.row.role.name}</>
+            }
         },
         {
             field: "is_active",
@@ -139,7 +144,7 @@ export default function UserTab() {
 
                 return (
                     <>
-                        {params.row.role != UserRole.ADMIN &&
+                        {params.row.role.name != "Admin" &&
                             button
                         }
                     </>
@@ -148,63 +153,10 @@ export default function UserTab() {
         }
     ]
 
-    /** 
-     * GenericDeleteButton((id)=>({message:`Successfully deleted User ${id}`, severity:"success", duration: 3000}),
-            (id, ex)=>({message:`Failed to delete User ${id}`, severity:"error", duration: 3000}),
-            setCurrentSnackbarState,
-            deleteUser)
-     * 
-    */
-
-    /** 
-     * 
-     * {
-        field: "delete",
-        headerName: "",
-        type: "actions",
-        width: 75,
-        renderCell: (params) => {
-            return (
-                <Button
-                    onClick={async () => {
-                        try {
-                            await deleteFunction(params.row.id)
-                            setCurrentSnackbarState({
-                                open: true,
-                                options: successSnackbar(params.row.id)
-                            })
-                        }
-                        catch (ex) {
-                            setCurrentSnackbarState(
-                                {
-                                    open: true,
-                                    options: failureSnackbar(params.row.id, ex)
-                                }
-                            )
-                        }
-
-                    }}
-                    sx={{ height: "75%", width: "50%" }}
-                    variant={"contained"}
-                    color={"error"}
-                >
-                    <DeleteIcon></DeleteIcon>
-                </Button>
-            )
-        }
-    }
-     * 
-    */
-    /*
-    useEffect(() => {
-        getUsers()
-    }, [])
-    */
-
     return (
         <>
             <GenericTabBody
-                userRole={user?.role}
+                createPermission={Permission.USER_CREATE}
                 dataEnvelope={data}
                 createDialog={createDialog}
                 gridColumnDefinition={columnDefinitions}

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { hasPermission, useAuth } from "../context/AuthContext";
 import type { FarmCreate, FarmRead, FarmUpdate } from "../api/schemas/farm";
 import type { GenericGridColumn, SnackbarState } from "./datagrid/GenericDataGridComponent"
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton } from "./datagrid/GenericDataGridComponent";
 import {type DialogDefinition} from "./DialogComponent"
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 import type { DataEnvelope } from "../api/schemas/dataEnvelope";
+import { Permission } from "../api/schemas/auth";
 
 export default function FarmTab() {
     const { user } = useAuth()
@@ -130,9 +131,11 @@ export default function FarmTab() {
         }
     ]
 
-    if(user?.role == "Admin")
-    {
+    if(hasPermission(Permission.FARM_UPDATE)){
         dataGridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+    }
+
+    if(hasPermission(Permission.FARM_DELETE)){
         dataGridColumnDefinition.push(GenericDeleteButton(
             (id)=>({message:`Successfully deleted Farm ${id}`, severity:"success", duration: 3000}),
             (id, _)=>({message:`Failed to delete Farm ${id}`, severity:"error", duration: 3000}),
@@ -142,7 +145,8 @@ export default function FarmTab() {
     return (
         <>
             <GenericTabBody<FarmRead>
-                userRole={user?.role} dataEnvelope={data}
+                createPermission={Permission.FARM_CREATE} 
+                dataEnvelope={data}
                 gridColumnDefinition={dataGridColumnDefinition}
                 createDialog={createDialog}
                 currentDialogDefinition={currentDialogDefinition}

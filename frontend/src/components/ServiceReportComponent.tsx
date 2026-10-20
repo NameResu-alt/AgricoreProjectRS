@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { hasPermission, useAuth } from "../context/AuthContext";
 import type { ServiceReportCreate, ServiceReportRead } from "../api/schemas/service_report";
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
@@ -8,6 +8,7 @@ import apiClient from "../api/client";
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { Button } from "@mui/material";
 import type { DataEnvelope } from "../api/schemas/dataEnvelope";
+import { Permission } from "../api/schemas/auth";
 
 export default function ServiceReportTab() {
     const { user } = useAuth()
@@ -206,8 +207,11 @@ export default function ServiceReportTab() {
         }
     ]
 
-    if (user?.role == "Admin") {
+    if(hasPermission(Permission.SERVICE_REPORT_UPDATE)){
         columnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+    }
+
+    if(hasPermission(Permission.SERVICE_REPORT_DELETE)){
         columnDefinitions.push(GenericDeleteButton(
             (id) => ({ message: `Successfully deleted Service Report ${id}`, severity: "success", duration: 3000 }),
             (id, _) => ({ message: `Failed to delete Service Report ${id}`, severity: "error", duration: 3000 }),
@@ -217,7 +221,7 @@ export default function ServiceReportTab() {
 
     return (
         <GenericTabBody
-            userRole={user?.role}
+            createPermission={Permission.SERVICE_REPORT_CREATE}
             dataEnvelope={data}
             gridColumnDefinition={columnDefinitions}
             createDialog={createDialog}

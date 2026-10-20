@@ -1,14 +1,15 @@
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
-import { type LoginCredentials, type JWTPayload } from '../api/schemas/auth';
+import { type LoginCredentials, type JWTPayload, type UserInformation, Permission } from '../api/schemas/auth';
 import apiClient, { ACCESS_KEY, REFRESH_KEY } from "../api/client";
 import type TokenResponse from "../api/schemas/token_schema"
 
 import { refreshAccessToken } from "../api/client";
+import type { JwtPayload } from "jwt-decode";
 
 interface AuthContextValues {
     token: string | null
     refreshToken: string | null
-    user: JWTPayload | null,
+    user: UserInformation | null,
     isAuthenticated: boolean,
     login: ({ username, password }: LoginCredentials) => Promise<void>,
     logout: () => Promise<void>,
@@ -28,6 +29,7 @@ function decodeToken(token: string): JWTPayload | null {
         return {
             sub: payload.sub,
             role: payload.role,
+            permissions: payload.permissions,
             exp: payload.exp
         }
     }
@@ -50,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
 
-    const user = (token ? decodeToken(token) : null)
+    const jwtPayload = (token ? decodeToken(token) : null)
 
     const login = useCallback(async ({
         username,
@@ -118,16 +120,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [updateTokens])
 
     useEffect(() => {
-        if (!token || !refreshToken || user?.exp == null) return
+        if (!token || !refreshToken || jwtPayload?.exp == null) return
         let cancelled = false;
 
-        const delay = user.exp * 1000 - Date.now() - 60_000;
+        const delay = jwtPayload.exp * 1000 - Date.now() - 60_000;
 
         const timer = setTimeout(async () => {
             try {
                 await refreshAccessToken();
             } catch {
-                
+
             }
         }, Math.max(0, delay));
 
@@ -136,10 +138,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             cancelled = true;
             clearTimeout(timer)
         };
-    }, [token, refreshToken, user?.exp])
+    }, [token, refreshToken, jwtPayload?.exp])
 
 
-    const isAuthenticated = user !== null && user.exp * 1000 > Date.now()
+    const isAuthenticated = jwtPayload !== null && jwtPayload.exp * 1000 > Date.now()
+
+    let userPrep = null
+    if (jwtPayload !== null) {
+
+        const user_permissions: Permission[] = []
+        const values = Object.values(Permission)
+
+
+        for (const permission of jwtPayload.permissions) {
+            if (values.includes(permission as Permission)) {
+                user_permissions.push(permission as Permission)
+            }
+            else {
+                console.log(`Foreign Permission present: ${permission}`)
+            }
+        }
+
+        userPrep = {
+            ...jwtPayload,
+            permissions: user_permissions
+        }
+    }
+    const user = userPrep
 
     const value = { token, refreshToken, user, isAuthenticated, login, logout, updateTokens };
 
@@ -153,4 +178,26 @@ export function useAuth(): AuthContextValues {
     }
 
     return context;
+}
+
+export function hasPermission(permission: Permission, allow_wildcard: boolean = true): boolean {
+    const context = useAuth()
+
+    let user_permissions = new Set(context.user?.permissions)
+    console.log(`Need: ${permission.toString()} User Permissions: ${context.user?.permissions.map((p) => p.toString())}`)
+    if (user_permissions.has(permission)) {
+        console.log("Valid")
+        return true;
+    }
+
+    if (allow_wildcard) {
+        const neededWildcard =
+            `${permission.split(":")[0]}:*` as Permission;
+
+        if (user_permissions.has(neededWildcard)) {
+            return true;
+        }
+    }
+    console.log("Invalid")
+    return false
 }

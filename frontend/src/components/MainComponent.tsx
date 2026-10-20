@@ -1,7 +1,7 @@
 import { Box, Tab, Tabs, Button, Typography, useColorScheme, useTheme } from "@mui/material"
 import { useState } from "react"
-import { useAuth } from '../context/AuthContext';
-import UserTab from "./UserComponent"
+import { hasPermission, useAuth } from '../context/AuthContext';
+import UserTab from "./user/UserComponent"
 import ServiceReportTab from "./ServiceReportComponent"
 import FieldJobTab from "./FieldJobComponent"
 import FieldHandTab from "./FieldHandComponent"
@@ -15,8 +15,11 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import AccessibilityNewIcon from '@mui/icons-material/AccessibilityNew';
 import TaskIcon from '@mui/icons-material/Task';
-import { UserRole } from "../api/schemas/auth";
 import LightModeToggleButton from "./LightModeToggleComponent";
+import { Permission } from "../api/schemas/auth";
+import RoleComponent from "./user/RoleDialogComponent";
+import RoleDialogComponent from "./user/RoleDialogComponent";
+import UserViewComponent from "./user/UserViewComponent";
 
 
 export default function MainPage() {
@@ -28,9 +31,10 @@ export default function MainPage() {
 
     const userTab = {
         key: "users",
-        label: "Users",
+        label: "Users & Roles",
         icon: <PersonIcon />,
-        content: <UserTab />
+        content: <UserViewComponent/>
+        //content: <UserTab />
     };
 
     const fieldHandTab = {
@@ -74,11 +78,31 @@ export default function MainPage() {
         icon: <AnalyticsIcon />,
         content: <BusinessTab />
     }
+    const visibleTabs: any[] = []
 
-    const tabsByRole: Record<UserRole, any> = {
-        "Admin": [userTab, fieldHandTab, farmTab, equipmentTab, fieldJobTab, serviceReportTab, metricsTab],
-        "Field_Hand": [fieldHandTab, farmTab, equipmentTab, fieldJobTab, serviceReportTab, metricsTab],
-        "Auditor": [fieldHandTab, farmTab, equipmentTab, fieldJobTab, serviceReportTab, metricsTab]
+    if(user != null){
+        if(hasPermission(Permission.USER_READ) || hasPermission(Permission.ROLE_READ)){
+            visibleTabs.push(userTab)
+        }
+        if(hasPermission(Permission.FIELD_HAND_READ)){
+            visibleTabs.push(fieldHandTab)
+        }
+        if(hasPermission(Permission.FARM_READ))
+        {
+           visibleTabs.push(farmTab) 
+        }
+        if(hasPermission(Permission.EQUIPMENT_READ)){
+            visibleTabs.push(equipmentTab)
+        }
+        if(hasPermission(Permission.FIELD_JOB_READ)){
+            visibleTabs.push(fieldJobTab)
+        }
+        if(hasPermission(Permission.SERVICE_REPORT_READ)){
+            visibleTabs.push(serviceReportTab)
+        }
+        if(hasPermission(Permission.BUSINESS_READ)){
+            visibleTabs.push(metricsTab)
+        }
     }
 
     /**
@@ -90,7 +114,7 @@ export default function MainPage() {
             </Box>
      */
 
-    const tabs = tabsByRole[user!.role]
+    const tabs = visibleTabs
 
     const tabBarheight = "80px"
 

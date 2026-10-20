@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { hasPermission, useAuth } from "../context/AuthContext";
 import { FieldJobPriority, FieldJobStatus, type FieldJobCreate, type FieldJobRead, type FieldJobUpdate, type FieldJobPatchStatus } from "../api/schemas/field_job";
 import type { DialogDefinition } from "./DialogComponent";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
@@ -9,6 +9,7 @@ import apiClient from "../api/client";
 import Button from "@mui/material/Button";
 import type { ServiceReportCreate } from "../api/schemas/service_report";
 import type { DataEnvelope } from "../api/schemas/dataEnvelope";
+import { Permission } from "../api/schemas/auth";
 
 export default function FieldJobTab() {
     const { user } = useAuth()
@@ -308,15 +309,10 @@ export default function FieldJobTab() {
         }
     }
 
-    if (user?.role == "Admin") {
+    if(hasPermission(Permission.FIELD_JOB_UPDATE)){
         gridColumnDefinitions.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
-        gridColumnDefinitions.push(writeReport)
-        gridColumnDefinitions.push(GenericDeleteButton(
-            (id) => ({ message: `Successfully deleted Field Job ${id}`, severity: "success", duration: 3000 }),
-            (id, _) => ({ message: `Failed to delete Field Job ${id}`, severity: "error", duration: 3000 }),
-            setCurrentSnackbarState, functions.delete))
     }
-    else if (user?.role == "Field_Hand") {
+    else if(hasPermission(Permission.FIELD_JOB_CHANGE_STATUS), false){
         const patchOnly: GenericGridColumn<FieldJobRead> = {
             field: "patch",
             headerName: "",
@@ -342,12 +338,23 @@ export default function FieldJobTab() {
         }
 
         gridColumnDefinitions.push(patchOnly)
+    }
+
+    if(hasPermission(Permission.FIELD_JOB_ASSIGN_SERVICE_REPORT))
+    {
         gridColumnDefinitions.push(writeReport)
+    }
+
+    if(hasPermission(Permission.FIELD_JOB_DELETE)){
+        gridColumnDefinitions.push(GenericDeleteButton(
+            (id) => ({ message: `Successfully deleted Field Job ${id}`, severity: "success", duration: 3000 }),
+            (id, _) => ({ message: `Failed to delete Field Job ${id}`, severity: "error", duration: 3000 }),
+            setCurrentSnackbarState, functions.delete))
     }
 
     return (
         <GenericTabBody
-            userRole={user?.role}
+            createPermission={Permission.FIELD_JOB_CREATE}
             dataEnvelope={data}
             gridColumnDefinition={gridColumnDefinitions}
             createDialog={createDialog}

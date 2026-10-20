@@ -3,7 +3,6 @@ import type { GridRenderCellParams } from "@mui/x-data-grid/models";
 import type React from "react";
 import { GenericDialog, type DialogDefinition } from "../DialogComponent";
 import { Alert, Box, Button, Snackbar } from "@mui/material";
-import type { UserRole } from "../../api/schemas/auth";
 import type { GridApiCommunity } from "@mui/x-data-grid/internals";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -16,6 +15,8 @@ import type { CustomSortingModel } from "./CustomColumnMenu";
 import type { CustomFilterModel } from "./CustomFilterMenuV2";
 import CustomFilterMenuV2, { boolean_operators, date_operators, numeric_operators, string_operators } from "./CustomFilterMenuV2";
 import type { DataEnvelope } from "../../api/schemas/dataEnvelope";
+import type { Permission} from "../../api/schemas/auth";
+import { hasPermission } from "../../context/AuthContext";
 
 export type GenericGridColumn<T extends GridValidRowModel> = {
     field: keyof T | "delete" | "update" | "patch" | "create" | "download" | "header";
@@ -109,12 +110,12 @@ export function GenericDeleteButton(successSnackbar: (id: number) => GenericSnac
     }
 }
 
-export function GenericTabBody<T extends GridValidRowModel>({ userRole, dataEnvelope, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState, setData, getURL, getSignal}: { userRole: UserRole | undefined, dataEnvelope: DataEnvelope<T>, gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getURL: string, getSignal: number}) {
+export function GenericTabBody<T extends GridValidRowModel>({createPermission, dataEnvelope, gridColumnDefinition, createDialog, currentDialogDefinition, setCurrentDialogDefinition, dialogOpen, setDialogOpen, snackbarState, setSnackbarState, setData, getURL, getSignal}: {createPermission:Permission,  dataEnvelope: DataEnvelope<T>, gridColumnDefinition: GenericGridColumn<T>[], createDialog: DialogDefinition<any>, currentDialogDefinition: DialogDefinition<any> | null, setCurrentDialogDefinition: React.Dispatch<React.SetStateAction<DialogDefinition<any> | null>>, dialogOpen: boolean, setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>, snackbarState: SnackbarState, setSnackbarState: React.Dispatch<React.SetStateAction<SnackbarState>>, setData: React.Dispatch<React.SetStateAction<DataEnvelope<T>>>, getURL: string, getSignal: number}) {
     return (
         <>
             <Box sx={{ height: "100%", width: "100%", display: 'flex', justifyContent: 'flex-end', flexDirection: "column" }}>
                 {
-                    userRole === "Admin" &&
+                    hasPermission(createPermission) &&
                     <Button
                         onClick={() => {
                             setCurrentDialogDefinition(createDialog)

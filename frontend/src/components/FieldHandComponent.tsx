@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { hasPermission, useAuth } from "../context/AuthContext";
 import { type DialogDefinition } from "./DialogComponent";
 import type { FieldHandCreate, FieldHandRead, FieldHandUpdate } from "../api/schemas/field_hand";
 import createDefaultFunctions from "../api/genericCRUDFunctions";
 import { GenericDeleteButton, GenericTabBody, GenericUpdateButton, type GenericGridColumn, type SnackbarState } from "./datagrid/GenericDataGridComponent";
 import type { DataEnvelope } from "../api/schemas/dataEnvelope";
+import { Permission } from "../api/schemas/auth";
 
 export default function FieldHandTab() {
     const { user } = useAuth()
@@ -113,9 +114,12 @@ export default function FieldHandTab() {
         }
     ]
 
-
-    if (user?.role == "Admin") {
+    if(hasPermission(Permission.FIELD_HAND_UPDATE)){
         gridColumnDefinition.push(GenericUpdateButton(updateDialog, setCurrentDialogDefinition, setDialogOpen))
+        
+    }
+
+    if (hasPermission(Permission.FIELD_HAND_DELETE)) {
         gridColumnDefinition.push(GenericDeleteButton(
             (id) => ({ message: `Successfully deleted Field Hand ${id}`, severity: "success", duration: 3000 }),
             (id, _) => ({ message: `Failed to delete Field Hand ${id}`, severity: "error", duration: 3000 }),
@@ -126,7 +130,8 @@ export default function FieldHandTab() {
     return (
         <>
             <GenericTabBody<FieldHandRead>
-                userRole={user?.role} dataEnvelope={data}
+                createPermission={Permission.FIELD_HAND_CREATE}
+                dataEnvelope={data}
                 gridColumnDefinition={gridColumnDefinition}
                 createDialog={createDialog}
                 currentDialogDefinition={currentDialogDefinition}
